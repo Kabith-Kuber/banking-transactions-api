@@ -4,19 +4,25 @@ A RESTful banking transactions API built with **Java 17** and **Spring Boot 3**.
 
 ## Prerequisites
 
-- Java 17 or later
-- Maven 3.8 or later
+- Java 17 or later (Java is already installed on your machine)
+- **No Maven install required** — this project includes the Maven Wrapper (`mvnw.cmd`)
 
 ## Build
 
-```bash
-mvn clean package
+**Windows (PowerShell or Command Prompt):**
+
+```bat
+.\mvnw.cmd package
 ```
 
 ## Run
 
-```bash
-mvn spring-boot:run
+**Option 1 — double-click `run.bat` in the project folder**
+
+**Option 2 — from terminal:**
+
+```bat
+.\mvnw.cmd spring-boot:run
 ```
 
 The API starts on `http://localhost:8080`.
@@ -92,8 +98,8 @@ src/main/java/com/brainridge/banking/
 
 ## Testing
 
-```bash
-mvn test
+```bat
+.\mvnw.cmd test
 ```
 
 ## Future Enhancements
