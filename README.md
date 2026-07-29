@@ -27,6 +27,10 @@ A RESTful banking transactions API built with **Java 17** and **Spring Boot 3**.
 
 The API starts on `http://localhost:8080`.
 
+**Open the app in your browser:** [http://localhost:8080](http://localhost:8080)
+
+This opens a simple, user-friendly dashboard — no technical knowledge needed.
+
 ## API Endpoints
 
 | Method | Endpoint | Description |

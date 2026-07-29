@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrainRidge Banking</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-inner">
+            <div class="brand">
+                <span class="brand-mark">BR</span>
+                <div>
+                    <h1>BrainRidge Banking</h1>
+                    <p class="tagline">Simple demo for accounts &amp; transfers</p>
+                </div>
+            </div>
+            <div class="status-pill" id="serverStatus">Checking server…</div>
+        </div>
+    </header>
+
+    <main class="page">
+        <section class="intro-card">
+            <h2>How this works</h2>
+            <ol class="steps">
+                <li><strong>Create accounts</strong> — give each person a name and starting balance.</li>
+                <li><strong>Send money</strong> — move funds from one account to another.</li>
+                <li><strong>Check history</strong> — see every transfer in and out.</li>
+            </ol>
+            <p class="note">Your accounts stay in memory while the app is running. If you restart the server, all data is cleared.</p>
+        </section>
+
+        <div class="grid">
+            <!-- Create Account -->
+            <section class="card" id="createSection">
+                <div class="card-head">
+                    <span class="step-badge">1</span>
+                    <div>
+                        <h2>Create an account</h2>
+                        <p>Open a new account with a starting balance.</p>
+                    </div>
+                </div>
+                <form id="createForm" class="form">
+                    <label>
+                        Account holder name
+                        <input type="text" id="ownerName" placeholder="e.g. Jane Doe" required>
+                    </label>
+                    <label>
+                        Starting balance ($)
+                        <input type="number" id="initialBalance" min="0" step="0.01" value="1000.00" required>
+                    </label>
+                    <button type="submit" class="btn btn-primary">Create account</button>
+                </form>
+                <div id="createResult" class="result hidden"></div>
+            </section>
+
+            <!-- Transfer -->
+            <section class="card" id="transferSection">
+                <div class="card-head">
+                    <span class="step-badge">2</span>
+                    <div>
+                        <h2>Send money</h2>
+                        <p>Transfer funds between two accounts.</p>
+                    </div>
+                </div>
+                <form id="transferForm" class="form">
+                    <label>
+                        From account
+                        <select id="fromAccount" required>
+                            <option value="">— pick an account —</option>
+                        </select>
+                    </label>
+                    <label>
+                        To account
+                        <select id="toAccount" required>
+                            <option value="">— pick an account —</option>
+                        </select>
+                    </label>
+                    <label>
+                        Amount ($)
+                        <input type="number" id="transferAmount" min="0.01" step="0.01" placeholder="50.00" required>
+                    </label>
+                    <label>
+                        Note <span class="optional">(optional)</span>
+                        <input type="text" id="transferNote" placeholder="e.g. Rent, lunch, etc." maxlength="255">
+                    </label>
+                    <button type="submit" class="btn btn-primary">Send transfer</button>
+                </form>
+                <div id="transferResult" class="result hidden"></div>
+            </section>
+
+            <!-- Lookup -->
+            <section class="card" id="lookupSection">
+                <div class="card-head">
+                    <span class="step-badge">3</span>
+                    <div>
+                        <h2>Check balance</h2>
+                        <p>Look up an account's current balance.</p>
+                    </div>
+                </div>
+                <form id="lookupForm" class="form form-inline">
+                    <label class="grow">
+                        Account
+                        <select id="lookupAccount" required>
+                            <option value="">— pick an account —</option>
+                        </select>
+                    </label>
+                    <button type="submit" class="btn btn-secondary">Check balance</button>
+                </form>
+                <div id="lookupResult" class="result hidden"></div>
+            </section>
+
+            <!-- History -->
+            <section class="card card-wide" id="historySection">
+                <div class="card-head">
+                    <span class="step-badge">4</span>
+                    <div>
+                        <h2>Transaction history</h2>
+                        <p>See money sent and received for an account.</p>
+                    </div>
+                </div>
+                <form id="historyForm" class="form form-inline">
+                    <label class="grow">
+                        Account
+                        <select id="historyAccount" required>
+                            <option value="">— pick an account —</option>
+                        </select>
+                    </label>
+                    <button type="submit" class="btn btn-secondary">Load history</button>
+                </form>
+                <div id="historyResult" class="result hidden"></div>
+            </section>
+        </div>
+
+        <section class="card card-wide saved-accounts" id="savedAccountsSection">
+            <div class="card-head">
+                <div>
+                    <h2>Your accounts this session</h2>
+                    <p>Accounts you've created appear here so you don't have to remember IDs.</p>
+                </div>
+                <button type="button" class="btn btn-ghost" id="clearAccountsBtn">Clear list</button>
+            </div>
+            <div id="savedAccountsList" class="account-list empty-state">
+                <p>No accounts yet. Create one above to get started.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <p>API docs for developers: <a href="/swagger-ui/index.html">Swagger UI</a></p>
+    </footer>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>

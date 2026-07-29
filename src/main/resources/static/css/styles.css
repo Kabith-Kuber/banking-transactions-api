@@ -1,0 +1,400 @@
+:root {
+    --bg: #f4f1ec;
+    --surface: #ffffff;
+    --border: #ddd6cb;
+    --text: #1c2b2d;
+    --muted: #5f6f72;
+    --accent: #0f5c4c;
+    --accent-hover: #0b483c;
+    --accent-soft: #e3f0ec;
+    --danger: #9b2c2c;
+    --danger-bg: #fdecec;
+    --success: #1f6b42;
+    --success-bg: #e8f6ee;
+    --warning-bg: #fff8e6;
+    --shadow: 0 8px 24px rgba(28, 43, 45, 0.08);
+    --radius: 12px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.5;
+}
+
+a {
+    color: var(--accent);
+}
+
+.site-header {
+    background: var(--accent);
+    color: #fff;
+    padding: 1.25rem 1.5rem;
+    box-shadow: var(--shadow);
+}
+
+.header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.brand-mark {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.15);
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+}
+
+.brand h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.tagline {
+    margin: 0.15rem 0 0;
+    opacity: 0.85;
+    font-size: 0.95rem;
+}
+
+.status-pill {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 0.45rem 0.9rem;
+    border-radius: 999px;
+    font-size: 0.9rem;
+}
+
+.status-pill.online {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+.status-pill.offline {
+    background: var(--danger);
+}
+
+.page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+
+.intro-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow);
+}
+
+.intro-card h2 {
+    margin: 0 0 0.75rem;
+    font-size: 1.15rem;
+}
+
+.steps {
+    margin: 0 0 1rem;
+    padding-left: 1.25rem;
+}
+
+.steps li {
+    margin-bottom: 0.35rem;
+}
+
+.note {
+    margin: 0;
+    padding: 0.75rem 1rem;
+    background: var(--warning-bg);
+    border-radius: 8px;
+    color: #6b5a1e;
+    font-size: 0.92rem;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    box-shadow: var(--shadow);
+}
+
+.card-wide {
+    grid-column: 1 / -1;
+}
+
+.card-head {
+    display: flex;
+    gap: 0.85rem;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.card-head h2 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.card-head p {
+    margin: 0.2rem 0 0;
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+
+.step-badge {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.form {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.form-inline {
+    grid-template-columns: 1fr auto;
+    align-items: end;
+}
+
+label {
+    display: grid;
+    gap: 0.35rem;
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+.optional {
+    font-weight: 400;
+    color: var(--muted);
+}
+
+input,
+select {
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font: inherit;
+    background: #fff;
+}
+
+input:focus,
+select:focus {
+    outline: 2px solid var(--accent-soft);
+    border-color: var(--accent);
+}
+
+.btn {
+    border: none;
+    border-radius: 8px;
+    padding: 0.7rem 1rem;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+}
+
+.btn-secondary {
+    background: #eef2f1;
+    color: var(--text);
+}
+
+.btn-secondary:hover {
+    background: #e2e8e6;
+}
+
+.btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+}
+
+.btn-ghost:hover {
+    background: #f7f7f7;
+}
+
+.grow {
+    flex: 1;
+}
+
+.result {
+    margin-top: 1rem;
+    padding: 0.9rem 1rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+}
+
+.result.hidden {
+    display: none;
+}
+
+.result.success {
+    background: var(--success-bg);
+    color: var(--success);
+    border: 1px solid #b9e0c8;
+}
+
+.result.error {
+    background: var(--danger-bg);
+    color: var(--danger);
+    border: 1px solid #f0c0c0;
+}
+
+.result.info {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border: 1px solid #b8d9cf;
+}
+
+.result-title {
+    font-weight: 700;
+    margin-bottom: 0.35rem;
+}
+
+.result-detail {
+    margin: 0.25rem 0;
+}
+
+.account-list {
+    display: grid;
+    gap: 0.65rem;
+}
+
+.account-list.empty-state {
+    color: var(--muted);
+    font-size: 0.95rem;
+}
+
+.account-chip {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    background: #faf9f7;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    flex-wrap: wrap;
+}
+
+.account-chip strong {
+    display: block;
+}
+
+.account-chip small {
+    color: var(--muted);
+    word-break: break-all;
+}
+
+.account-chip .balance {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent);
+    white-space: nowrap;
+}
+
+.history-table-wrap {
+    overflow-x: auto;
+    margin-top: 0.5rem;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+}
+
+th,
+td {
+    text-align: left;
+    padding: 0.65rem 0.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.tag {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.tag.sent {
+    background: #fdecec;
+    color: #9b2c2c;
+}
+
+.tag.received {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+.saved-accounts .card-head {
+    justify-content: space-between;
+    align-items: center;
+}
+
+.site-footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+@media (max-width: 800px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-inline {
+        grid-template-columns: 1fr;
+    }
+}
