@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BrainRidge Banking</title>
+    <title>BrainRidge Bank</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;750&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
@@ -14,21 +14,23 @@
         <!-- ===================== Sidebar ===================== -->
         <aside class="sidebar" id="sidebar" aria-label="Primary navigation">
             <div class="sidebar-brand">
-                <span class="brand-mark" aria-hidden="true">BR</span>
+                <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-6 9 6"/><path d="M4 10v9"/><path d="M20 10v9"/><path d="M8 10v9"/><path d="M16 10v9"/><path d="M2 21h20"/></svg>
+                </span>
                 <span class="brand-text">
                     <strong>BrainRidge</strong>
-                    <span>Banking Console</span>
+                    <span>Online Banking</span>
                 </span>
             </div>
 
             <nav class="sidebar-nav">
-                <span class="nav-label">Workspace</span>
+                <span class="nav-label">Banking</span>
                 <button class="nav-item active" data-view="overview" type="button">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
-                    Overview
+                    Dashboard
                 </button>
                 <button class="nav-item" data-view="accounts" type="button">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
                     Accounts
                     <span class="nav-count" id="navAccountsCount">0</span>
                 </button>
@@ -38,7 +40,7 @@
                 </button>
                 <button class="nav-item" data-view="history" type="button">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
-                    History
+                    Transactions
                 </button>
             </nav>
 
@@ -58,13 +60,11 @@
                 <button class="menu-toggle" id="menuToggle" type="button" aria-label="Open navigation">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                 </button>
-                <div>
-                    <nav class="breadcrumb" aria-label="Breadcrumb">
-                        <span>Console</span>
-                        <span>/</span>
-                        <b id="breadcrumbCurrent">Overview</b>
-                    </nav>
-                </div>
+                <nav class="breadcrumb" aria-label="Breadcrumb">
+                    <span>BrainRidge Bank</span>
+                    <span>/</span>
+                    <b id="breadcrumbCurrent">Dashboard</b>
+                </nav>
                 <div class="topbar-actions">
                     <button class="btn btn--ghost btn--sm" id="startTourBtn" type="button">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -78,94 +78,81 @@
             </header>
 
             <main class="content">
-                <!-- ============ Overview ============ -->
+                <!-- ============ Dashboard ============ -->
                 <section class="view active" id="view-overview" data-tour="overview">
                     <div class="page-header">
                         <div>
-                            <h1>Overview</h1>
-                            <p>A snapshot of the accounts and transfers in your current session.</p>
-                        </div>
-                        <div class="page-header-actions">
-                            <button class="btn btn--secondary" data-goto="accounts" type="button">New account</button>
-                            <button class="btn btn--primary" data-goto="transfer" type="button">Send money</button>
+                            <h1>Welcome back</h1>
+                            <p>Here's what's happening across your BrainRidge accounts today.</p>
                         </div>
                     </div>
 
-                    <div class="metric-grid" id="metricGrid">
-                        <div class="metric" data-metric="accounts">
-                            <div class="metric-top">
-                                <span class="metric-label">Total accounts</span>
-                                <span class="metric-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>
+                    <!-- Total balance hero -->
+                    <div class="balance-hero" data-tour="hero">
+                        <div class="balance-hero-main">
+                            <span class="balance-hero-label">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                                Total balance
+                            </span>
+                            <div class="balance-hero-value numeric" id="metricBalance">$0.00</div>
+                            <div class="balance-hero-sub" id="metricBalanceSub">Across all accounts</div>
+                            <div class="balance-hero-actions">
+                                <button class="btn btn--on-accent" data-goto="transfer" type="button">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3 21 7l-4 4"/><path d="M21 7H8"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h13"/></svg>
+                                    Send money
+                                </button>
+                                <button class="btn btn--on-accent-ghost" data-goto="accounts" type="button">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                    Open account
+                                </button>
                             </div>
-                            <div class="metric-value numeric" id="metricAccounts">0</div>
-                            <div class="metric-sub" id="metricAccountsSub">No accounts yet</div>
                         </div>
-                        <div class="metric" data-metric="balance">
-                            <div class="metric-top">
-                                <span class="metric-label">Total balance</span>
-                                <span class="metric-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span>
+                        <div class="balance-hero-stats">
+                            <div class="hero-stat">
+                                <div class="hs-label">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                                    Accounts
+                                </div>
+                                <div class="hs-value numeric" id="metricAccounts">0</div>
                             </div>
-                            <div class="metric-value numeric" id="metricBalance">$0.00</div>
-                            <div class="metric-sub" id="metricBalanceSub">Across all accounts</div>
-                        </div>
-                        <div class="metric" data-metric="transfers">
-                            <div class="metric-top">
-                                <span class="metric-label">Transfers</span>
-                                <span class="metric-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3 21 7l-4 4"/><path d="M21 7H8"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h13"/></svg></span>
+                            <div class="hero-stat">
+                                <div class="hs-label">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3 21 7l-4 4"/><path d="M21 7H8"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h13"/></svg>
+                                    Transfers
+                                </div>
+                                <div class="hs-value numeric" id="metricTransfers">0</div>
                             </div>
-                            <div class="metric-value numeric" id="metricTransfers">0</div>
-                            <div class="metric-sub" id="metricTransfersSub">This session</div>
-                        </div>
-                        <div class="metric" data-metric="volume">
-                            <div class="metric-top">
-                                <span class="metric-label">Volume moved</span>
-                                <span class="metric-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></span>
+                            <div class="hero-stat" style="grid-column:1 / -1;">
+                                <div class="hs-label">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                                    Volume moved this session
+                                </div>
+                                <div class="hs-value numeric" id="metricVolume">$0.00</div>
                             </div>
-                            <div class="metric-value numeric" id="metricVolume">$0.00</div>
-                            <div class="metric-sub" id="metricVolumeSub">Total transferred</div>
                         </div>
                     </div>
 
-                    <div class="grid-2">
+                    <!-- Your accounts -->
+                    <div class="section-head">
+                        <h2>Your accounts</h2>
+                        <button class="btn btn--secondary btn--sm" data-goto="accounts" type="button">Manage accounts</button>
+                    </div>
+                    <div class="account-grid" id="overviewAccountsGrid"></div>
+
+                    <!-- Activity + distribution -->
+                    <div class="grid-2" style="margin-top:24px;">
                         <div class="card">
                             <div class="card-header">
-                                <div>
-                                    <div class="card-title">Accounts</div>
-                                    <div class="card-desc">Balances update automatically after each transfer.</div>
-                                </div>
-                                <button class="btn btn--secondary btn--sm" data-goto="accounts" type="button">View all</button>
+                                <div class="card-title">Recent activity</div>
+                                <button class="btn btn--ghost btn--sm" id="clearActivityBtn" type="button">Clear</button>
                             </div>
                             <div class="card-body flush">
-                                <div class="table-wrap">
-                                    <table class="data">
-                                        <thead>
-                                            <tr>
-                                                <th>Account holder</th>
-                                                <th>Status</th>
-                                                <th class="col-num">Balance</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="overviewAccountsBody"></tbody>
-                                    </table>
-                                </div>
+                                <div class="feed" id="activityFeed"></div>
                             </div>
                         </div>
-
                         <div class="card">
-                            <div class="card-header">
-                                <div class="card-title">Balance distribution</div>
-                            </div>
+                            <div class="card-header"><div class="card-title">Balance distribution</div></div>
                             <div class="card-body" id="distributionBody"></div>
-                        </div>
-                    </div>
-
-                    <div class="card" style="margin-top:16px;">
-                        <div class="card-header">
-                            <div class="card-title">Recent activity</div>
-                            <button class="btn btn--ghost btn--sm" id="clearActivityBtn" type="button">Clear</button>
-                        </div>
-                        <div class="card-body flush">
-                            <div class="feed" id="activityFeed"></div>
                         </div>
                     </div>
                 </section>
@@ -175,7 +162,7 @@
                     <div class="page-header">
                         <div>
                             <h1>Accounts</h1>
-                            <p>Open new accounts and monitor their balances.</p>
+                            <p>Open new accounts and track every balance in one place.</p>
                         </div>
                         <div class="page-header-actions">
                             <button class="btn btn--secondary" id="clearAccountsBtn" type="button">Clear saved list</button>
@@ -186,7 +173,7 @@
                         <div class="card" data-tour="create">
                             <div class="card-header">
                                 <div>
-                                    <div class="card-title">Open an account</div>
+                                    <div class="card-title">Open a new account</div>
                                     <div class="card-desc">Create an account with a starting balance.</div>
                                 </div>
                             </div>
@@ -198,7 +185,7 @@
                                         <span class="field-error" id="ownerError">Please enter a name.</span>
                                     </div>
                                     <div class="field" id="fieldBalance">
-                                        <label class="field-label" for="initialBalance">Starting balance<span class="req">*</span></label>
+                                        <label class="field-label" for="initialBalance">Opening balance<span class="req">*</span></label>
                                         <div class="input-affix">
                                             <span class="affix">$</span>
                                             <input class="input" type="number" id="initialBalance" min="0" step="0.01" value="1000.00" required>
@@ -207,34 +194,19 @@
                                         <span class="field-error" id="balanceError">Enter a valid amount (0 or more).</span>
                                     </div>
                                     <div class="form-actions">
-                                        <button class="btn btn--primary" type="submit" id="createBtn">Create account</button>
+                                        <button class="btn btn--primary btn--block" type="submit" id="createBtn">Open account</button>
                                     </div>
                                     <div class="result" id="createResult"></div>
                                 </form>
                             </div>
                         </div>
 
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="card-title">All accounts</div>
+                        <div>
+                            <div class="section-head" style="margin-top:0;">
+                                <h2>All accounts</h2>
                                 <span class="badge badge--neutral" id="accountsCountBadge">0 total</span>
                             </div>
-                            <div class="card-body flush">
-                                <div class="table-wrap">
-                                    <table class="data">
-                                        <thead>
-                                            <tr>
-                                                <th>Account holder</th>
-                                                <th>Account ID</th>
-                                                <th>Status</th>
-                                                <th class="col-num">Balance</th>
-                                                <th class="col-actions">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="accountsTableBody"></tbody>
-                                    </table>
-                                </div>
-                            </div>
+                            <div class="account-grid" id="accountsGrid"></div>
                         </div>
                     </div>
                 </section>
@@ -250,9 +222,7 @@
 
                     <div class="grid-forms">
                         <div class="card">
-                            <div class="card-header">
-                                <div class="card-title">Transfer details</div>
-                            </div>
+                            <div class="card-header"><div class="card-title">Transfer details</div></div>
                             <div class="card-body">
                                 <div class="callout" id="transferHelp">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
@@ -297,9 +267,7 @@
                         </div>
 
                         <div class="card">
-                            <div class="card-header no-border">
-                                <div class="card-title">Selected accounts</div>
-                            </div>
+                            <div class="card-header no-border"><div class="card-title">Transfer preview</div></div>
                             <div class="card-body" id="transferPreview">
                                 <div class="empty" style="padding:24px 8px;">
                                     <div class="empty-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3 21 7l-4 4"/><path d="M21 7H8"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h13"/></svg></div>
@@ -310,11 +278,11 @@
                     </div>
                 </section>
 
-                <!-- ============ History ============ -->
+                <!-- ============ Transactions ============ -->
                 <section class="view" id="view-history" data-tour="history">
                     <div class="page-header">
                         <div>
-                            <h1>Transaction history</h1>
+                            <h1>Transactions</h1>
                             <p>Review every transfer sent or received by an account.</p>
                         </div>
                     </div>
@@ -328,14 +296,14 @@
                                         <option value="">Select account</option>
                                     </select>
                                 </div>
-                                <button class="btn btn--secondary" type="submit" id="historyBtn">Load history</button>
+                                <button class="btn btn--primary" type="submit" id="historyBtn">Load transactions</button>
                             </form>
                         </div>
                         <div class="card-body flush" id="historyResult">
                             <div class="empty">
                                 <div class="empty-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg></div>
                                 <h4>No account selected</h4>
-                                <p>Choose an account above and load its history to see transfers here.</p>
+                                <p>Choose an account above and load its transactions to see transfers here.</p>
                             </div>
                         </div>
                     </div>

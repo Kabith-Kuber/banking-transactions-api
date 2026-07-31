@@ -1,6 +1,10 @@
 /* ============================================================
-   BrainRidge Banking — Frontend
-   Vanilla JS. All API endpoints preserved from the original.
+   BrainRidge Bank — Online Banking Frontend
+   Vanilla JS. Talks to the same REST API as before:
+     POST /api/v1/accounts
+     GET  /api/v1/accounts/{id}
+     GET  /api/v1/accounts/{id}/transactions
+     POST /api/v1/transfers
    ============================================================ */
 
 const API = "/api/v1";
@@ -37,7 +41,10 @@ const esc = (t) => {
 const initials = (name) =>
     (name || "?").trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 
-/* ---------------- Storage ---------------- */
+/* Masked account number in a bank-card style, using the tail of the UUID. */
+const maskedNumber = (id) => `•••• •••• ${(id || "").slice(-4).toUpperCase()}`;
+
+/* ---------------- Storage (browser-side convenience only) ---------------- */
 const readJSON = (key, fallback) => {
     try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
     catch { return fallback; }
@@ -75,7 +82,7 @@ const patchBalance = (id, balance) => {
     renderAll();
 };
 
-/* ---------------- API layer (unchanged endpoints) ---------------- */
+/* ---------------- API layer (endpoints unchanged) ---------------- */
 async function api(url, options = {}) {
     const res = await fetch(url, {
         headers: { "Content-Type": "application/json", ...(options.headers || {}) },
@@ -153,17 +160,34 @@ function setLoading(btn, loading, label) {
     }
 }
 
-/* ---------------- Rendering: metrics ---------------- */
+/* ---------------- Empty state helper ---------------- */
+const EMPTY_ICONS = {
+    users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>',
+    activity: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
+    bars: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>',
+    history: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>'
+};
+
+function emptyBlock(icon, title, text, goto, gotoLabel) {
+    const btn = goto ? `<button class="btn btn--secondary btn--sm" data-goto="${goto}" type="button">${esc(gotoLabel)}</button>` : "";
+    return `<div class="empty"><div class="empty-ico">${EMPTY_ICONS[icon] || EMPTY_ICONS.activity}</div><h4>${esc(title)}</h4><p>${esc(text)}</p>${btn}</div>`;
+}
+
+/* Wrap an empty state so it spans a full account-grid row inside a card. */
+const spanEmpty = (html) => `<div class="card" style="grid-column:1 / -1;"><div class="card-body">${html}</div></div>`;
+
+/* ---------------- Rendering: metrics + hero ---------------- */
 function renderMetrics() {
     const accounts = getAccounts();
     const stats = getStats();
     const total = accounts.reduce((s, a) => s + Number(a.balance || 0), 0);
 
-    $("metricAccounts").textContent = accounts.length;
-    $("metricAccountsSub").textContent = accounts.length === 0
-        ? "No accounts yet" : accounts.length === 1 ? "1 active account" : `${accounts.length} active accounts`;
-
     $("metricBalance").textContent = money(total);
+    $("metricBalanceSub").textContent = accounts.length === 0
+        ? "No accounts yet"
+        : `Across ${accounts.length} account${accounts.length === 1 ? "" : "s"}`;
+
+    $("metricAccounts").textContent = accounts.length;
     $("metricTransfers").textContent = stats.transfers;
     $("metricVolume").textContent = money(stats.volume);
 
@@ -171,12 +195,12 @@ function renderMetrics() {
     $("accountsCountBadge").textContent = `${accounts.length} total`;
 }
 
-/* ---------------- Rendering: distribution ---------------- */
+/* ---------------- Rendering: balance distribution ---------------- */
 function renderDistribution() {
     const accounts = getAccounts();
     const body = $("distributionBody");
     if (accounts.length === 0) {
-        body.innerHTML = emptyBlock("bars", "No data yet", "Balances appear here once you create accounts.");
+        body.innerHTML = emptyBlock("bars", "No data yet", "Balances appear here once you open accounts.");
         return;
     }
     const max = Math.max(...accounts.map((a) => Number(a.balance || 0)), 1);
@@ -191,58 +215,65 @@ function renderDistribution() {
     body.innerHTML = `<div class="dist">${rows}</div>`;
 }
 
-/* ---------------- Rendering: accounts tables ---------------- */
-function accountRowActions(id) {
+/* ---------------- Rendering: account tiles ---------------- */
+function accountCard(a) {
     return `
-        <div style="display:inline-flex;gap:6px;">
-            <button class="btn-icon" data-action="refresh" data-id="${id}" title="Refresh balance" aria-label="Refresh balance">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
-            </button>
-            <button class="btn-icon" data-action="history" data-id="${id}" title="View history" aria-label="View history">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
-            </button>
-        </div>`;
+        <article class="acct-card">
+            <div class="acct-card-top">
+                <span class="acct-chip" aria-hidden="true"></span>
+                <span class="badge badge--success">Active</span>
+            </div>
+            <div class="acct-holder">
+                <span class="avatar">${esc(initials(a.ownerName))}</span>
+                <div>
+                    <div class="acct-holder-name">${esc(a.ownerName)}</div>
+                    <div class="acct-number">${esc(maskedNumber(a.id))}</div>
+                </div>
+            </div>
+            <div>
+                <div class="acct-balance-label">Available balance</div>
+                <div class="acct-balance numeric">${money(a.balance)}</div>
+            </div>
+            <div class="acct-actions">
+                <button class="btn btn--secondary btn--sm" data-action="refresh" data-id="${a.id}" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+                    Refresh
+                </button>
+                <button class="btn btn--secondary btn--sm" data-action="history" data-id="${a.id}" type="button">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
+                    Activity
+                </button>
+            </div>
+        </article>`;
 }
 
-function personCell(name) {
-    return `<div class="person"><span class="avatar">${esc(initials(name))}</span><span class="person-name">${esc(name)}</span></div>`;
-}
-
-function renderAccountsTable() {
-    const body = $("accountsTableBody");
-    const accounts = getAccounts();
-    if (accounts.length === 0) {
-        body.innerHTML = `<tr><td colspan="5">${emptyBlock("users", "No accounts yet", "Use the form on the left to open your first account.")}</td></tr>`;
-        return;
-    }
-    body.innerHTML = accounts.map((a) => `
-        <tr>
-            <td>${personCell(a.ownerName)}</td>
-            <td><span class="cell-mono">${esc(a.id.slice(0, 8))}…${esc(a.id.slice(-4))}</span></td>
-            <td><span class="badge badge--success">Active</span></td>
-            <td class="col-num cell-strong">${money(a.balance)}</td>
-            <td class="col-actions">${accountRowActions(a.id)}</td>
-        </tr>`).join("");
-
-    body.querySelectorAll("[data-action]").forEach((btn) => {
+function wireAccountActions(scope) {
+    scope.querySelectorAll("[data-action]").forEach((btn) => {
         btn.addEventListener("click", () => onAccountRowAction(btn.dataset.action, btn.dataset.id, btn));
     });
 }
 
-function renderOverviewAccounts() {
-    const body = $("overviewAccountsBody");
+function renderAccountsGrid() {
+    const grid = $("accountsGrid");
     const accounts = getAccounts();
     if (accounts.length === 0) {
-        body.innerHTML = `<tr><td colspan="3">${emptyBlock("users", "No accounts yet", "Create an account to get started.", "accounts", "New account")}</td></tr>`;
+        grid.innerHTML = spanEmpty(emptyBlock("users", "No accounts yet", "Use the form on the left to open your first account."));
+        return;
+    }
+    grid.innerHTML = accounts.map(accountCard).join("");
+    wireAccountActions(grid);
+}
+
+function renderOverviewAccounts() {
+    const grid = $("overviewAccountsGrid");
+    const accounts = getAccounts();
+    if (accounts.length === 0) {
+        grid.innerHTML = spanEmpty(emptyBlock("users", "No accounts yet", "Open your first account to get started.", "accounts", "Open account"));
         wireGotoButtons();
         return;
     }
-    body.innerHTML = accounts.slice(0, 5).map((a) => `
-        <tr>
-            <td>${personCell(a.ownerName)}</td>
-            <td><span class="badge badge--success">Active</span></td>
-            <td class="col-num cell-strong">${money(a.balance)}</td>
-        </tr>`).join("");
+    grid.innerHTML = accounts.slice(0, 6).map(accountCard).join("");
+    wireAccountActions(grid);
 }
 
 async function onAccountRowAction(action, id, btn) {
@@ -266,7 +297,7 @@ async function onAccountRowAction(action, id, btn) {
     }
 }
 
-/* ---------------- Rendering: activity ---------------- */
+/* ---------------- Rendering: activity feed ---------------- */
 const ACT_ICONS = {
     success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
     error: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
@@ -277,7 +308,7 @@ function renderActivity() {
     const feed = $("activityFeed");
     const items = getActivity();
     if (items.length === 0) {
-        feed.innerHTML = emptyBlock("activity", "No activity yet", "Create an account or run the demo to see events here.");
+        feed.innerHTML = emptyBlock("activity", "No activity yet", "Open an account or run the demo to see events here.");
         return;
     }
     feed.innerHTML = items.map((it) => `
@@ -290,27 +321,13 @@ function renderActivity() {
         </div>`).join("");
 }
 
-/* ---------------- Empty state helper ---------------- */
-const EMPTY_ICONS = {
-    users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>',
-    activity: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
-    bars: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>',
-    history: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>'
-};
-
-function emptyBlock(icon, title, text, goto, gotoLabel) {
-    const btn = goto ? `<button class="btn btn--secondary btn--sm" data-goto="${goto}" type="button">${esc(gotoLabel)}</button>` : "";
-    return `<div class="empty"><div class="empty-ico">${EMPTY_ICONS[icon] || EMPTY_ICONS.activity}</div><h4>${esc(title)}</h4><p>${esc(text)}</p>${btn}</div>`;
-}
-
 /* ---------------- Selects & transfer preview ---------------- */
 function populateSelects() {
     const accounts = getAccounts();
     ["fromAccount", "toAccount", "historyAccount"].forEach((selId) => {
         const sel = $(selId);
         const current = sel.value;
-        const placeholder = selId === "historyAccount" ? "Select account" : "Select account";
-        sel.innerHTML = `<option value="">${placeholder}</option>` +
+        sel.innerHTML = `<option value="">Select account</option>` +
             accounts.map((a) => `<option value="${a.id}">${esc(a.ownerName)} — ${money(a.balance)}</option>`).join("");
         if (accounts.some((a) => a.id === current)) sel.value = current;
     });
@@ -328,7 +345,7 @@ function updateTransferReadiness() {
         callout.classList.add("warn");
         help.textContent = count === 0
             ? "Create at least two accounts before sending money."
-            : "You have 1 account. Create one more to send money between them.";
+            : "You have 1 account. Open one more to send money between them.";
     } else {
         btn.disabled = false;
         callout.classList.remove("warn");
@@ -340,40 +357,55 @@ function renderTransferPreview() {
     const box = $("transferPreview");
     const from = getAccounts().find((a) => a.id === $("fromAccount").value);
     const to = getAccounts().find((a) => a.id === $("toAccount").value);
+
     if (!from && !to) {
         box.innerHTML = `<div class="empty" style="padding:24px 8px;"><div class="empty-ico">${EMPTY_ICONS.history}</div><p>Pick a sender and receiver to preview the transfer.</p></div>`;
         return;
     }
-    const card = (label, acc) => acc ? `
-        <div style="display:flex;align-items:center;gap:10px;padding:12px 0;">
+
+    const party = (role, acc) => acc ? `
+        <div class="xfer-party">
             <span class="avatar">${esc(initials(acc.ownerName))}</span>
-            <div><div class="person-name">${esc(acc.ownerName)}</div><div class="cell-muted" style="font-size:12px;">${label}</div></div>
-            <div class="numeric cell-strong" style="margin-left:auto;">${money(acc.balance)}</div>
-        </div>` : "";
-    box.innerHTML = `${card("Sender", from)}${from && to ? '<div style="border-top:1px solid var(--border);"></div>' : ""}${card("Receiver", to)}`;
+            <div>
+                <div class="xfer-party-role">${role}</div>
+                <div class="xfer-party-name">${esc(acc.ownerName)}</div>
+            </div>
+            <div class="xfer-party-bal">
+                <div class="xfer-party-role">Balance</div>
+                <div class="amt numeric">${money(acc.balance)}</div>
+            </div>
+        </div>` : `
+        <div class="xfer-party">
+            <span class="avatar">?</span>
+            <div><div class="xfer-party-role">${role}</div><div class="cell-muted">Not selected yet</div></div>
+        </div>`;
+
+    const arrow = `<div class="xfer-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></div>`;
+
+    box.innerHTML = `<div class="xfer-preview">${party("From", from)}${arrow}${party("To", to)}</div>`;
 }
 
 /* ---------------- Master render ---------------- */
 function renderAll() {
     renderMetrics();
     renderDistribution();
-    renderAccountsTable();
+    renderAccountsGrid();
     renderOverviewAccounts();
     populateSelects();
 }
 
 /* ---------------- View routing ---------------- */
 const VIEW_META = {
-    overview: "Overview",
+    overview: "Dashboard",
     accounts: "Accounts",
     transfer: "Send Money",
-    history: "History"
+    history: "Transactions"
 };
 
 function setView(view) {
     $$(".nav-item").forEach((n) => n.classList.toggle("active", n.dataset.view === view));
     $$(".view").forEach((v) => v.classList.toggle("active", v.id === `view-${view}`));
-    $("breadcrumbCurrent").textContent = VIEW_META[view] || "Overview";
+    $("breadcrumbCurrent").textContent = VIEW_META[view] || "Dashboard";
     closeSidebar();
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -419,23 +451,23 @@ $("createForm").addEventListener("submit", async (e) => {
     if (nameBad || balBad) return;
 
     const btn = $("createBtn");
-    setLoading(btn, true, "Creating…");
+    setLoading(btn, true, "Opening…");
     try {
         const acc = await createAccount(ownerName, initialBalance);
         upsertAccount(acc);
         logActivity(`Opened account for <b>${esc(acc.ownerName)}</b> with ${money(acc.balance)}.`, "success");
-        toast("Account created", `${acc.ownerName} · ${money(acc.balance)}`, "success");
+        toast("Account opened", `${acc.ownerName} · ${money(acc.balance)}`, "success");
         const count = getAccounts().length;
-        showResult("createResult", "success", "Account created",
+        showResult("createResult", "success", "Account opened",
             [`<b>${esc(acc.ownerName)}</b> now has <b>${money(acc.balance)}</b>.`,
-             count < 2 ? "Create one more account to enable transfers." : "You can now send money from the Send Money tab."]);
+             count < 2 ? "Open one more account to enable transfers." : "You can now send money from the Send Money tab."]);
         $("createForm").reset();
         $("initialBalance").value = "1000.00";
     } catch (err) {
-        toast("Could not create account", err.message, "error");
-        showResult("createResult", "error", "Could not create account", [esc(err.message)]);
+        toast("Could not open account", err.message, "error");
+        showResult("createResult", "error", "Could not open account", [esc(err.message)]);
     } finally {
-        setLoading(btn, false, "Create account");
+        setLoading(btn, false, "Open account");
     }
 });
 ["ownerName", "initialBalance"].forEach((id) =>
@@ -479,7 +511,7 @@ $("transferForm").addEventListener("submit", async (e) => {
         showResult("transferResult", "success", "Transfer complete",
             [`<b>${money(t.amount)}</b> moved from ${esc(fromName)} to ${esc(toName)}.`,
              description ? `Note: ${esc(description)}` : "",
-             "View it anytime under History."]);
+             "View it anytime under Transactions."]);
         $("transferAmount").value = "";
         $("transferNote").value = "";
         renderTransferPreview();
@@ -500,13 +532,13 @@ $("transferReset").addEventListener("click", () => {
     $(id).addEventListener("change", () => { renderTransferPreview(); setInvalid(id === "fromAccount" ? "fieldFrom" : "fieldTo", false); }));
 $("transferAmount").addEventListener("input", () => setInvalid("fieldAmount", false));
 
-/* ---------------- History ---------------- */
+/* ---------------- Transactions (history) ---------------- */
 $("historyForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const accountId = $("historyAccount").value;
     const container = $("historyResult");
     if (!accountId) {
-        container.innerHTML = emptyBlock("history", "No account selected", "Choose an account above to load its history.");
+        container.innerHTML = emptyBlock("history", "No account selected", "Choose an account above to load its transactions.");
         return;
     }
     const name = getAccounts().find((a) => a.id === accountId)?.ownerName || "Account";
@@ -520,18 +552,20 @@ $("historyForm").addEventListener("submit", async (e) => {
             return;
         }
         const rows = page.content.map((tx) => {
+            // From this account's point of view: money out = debit, money in = credit.
             const sent = tx.fromAccountId === accountId;
             const otherId = sent ? tx.toAccountId : tx.fromAccountId;
             const other = getAccounts().find((a) => a.id === otherId)?.ownerName || (otherId.slice(0, 8) + "…");
             const badge = sent ? '<span class="badge badge--warning">Sent</span>' : '<span class="badge badge--success">Received</span>';
-            const sign = sent ? "-" : "+";
+            const amtClass = sent ? "amt-debit" : "amt-credit";
+            const sign = sent ? "−" : "+";
             return `
                 <tr>
                     <td>${badge}</td>
                     <td>${personCell(other)}</td>
                     <td class="cell-muted">${esc(tx.description || "—")}</td>
                     <td class="cell-muted">${dateTime(tx.timestamp)}</td>
-                    <td class="col-num cell-strong">${sign}${money(tx.amount)}</td>
+                    <td class="col-num ${amtClass}">${sign}${money(tx.amount)}</td>
                 </tr>`;
         }).join("");
         container.innerHTML = `
@@ -543,12 +577,16 @@ $("historyForm").addEventListener("submit", async (e) => {
             </div>`;
         logActivity(`Loaded ${page.totalElements} transaction(s) for <b>${esc(name)}</b>.`, "info");
     } catch (err) {
-        container.innerHTML = emptyBlock("history", "Could not load history", err.message);
-        toast("Could not load history", err.message, "error");
+        container.innerHTML = emptyBlock("history", "Could not load transactions", err.message);
+        toast("Could not load transactions", err.message, "error");
     } finally {
-        setLoading(btn, false, "Load history");
+        setLoading(btn, false, "Load transactions");
     }
 });
+
+function personCell(name) {
+    return `<div class="person"><span class="avatar">${esc(initials(name))}</span><span class="person-name">${esc(name)}</span></div>`;
+}
 
 function skeletonTable() {
     const row = `<tr class="skel-row"><td><div class="skel skel-line" style="width:70px"></div></td><td><div class="skel skel-line" style="width:130px"></div></td><td><div class="skel skel-line" style="width:90px"></div></td><td><div class="skel skel-line" style="width:110px"></div></td><td class="col-num"><div class="skel skel-line" style="width:70px;margin-left:auto"></div></td></tr>`;
@@ -587,7 +625,7 @@ $("runDemoBtn").addEventListener("click", async (e) => {
         logActivity(`<b>Alice Johnson</b> sent <b>${money(150)}</b> to <b>Bob Martinez</b>.`, "success");
 
         $("historyAccount").value = alice.id;
-        toast("Demo complete", "Created two accounts and sent $150.", "success");
+        toast("Demo complete", "Opened two accounts and sent $150.", "success");
         setView("overview");
     } catch (err) {
         toast("Demo failed", err.message, "error");
@@ -598,11 +636,11 @@ $("runDemoBtn").addEventListener("click", async (e) => {
 
 /* ---------------- Guided tour ---------------- */
 const tourSteps = [
-    { view: "overview", title: "Welcome to BrainRidge Banking", text: "This console lets you create accounts, move money, and review transactions. Here is a 30-second tour of where everything lives." },
-    { view: "accounts", title: "Accounts", text: "Open new accounts on the left and track every balance in the table on the right. You need two accounts to make a transfer." },
-    { view: "transfer", title: "Send money", text: "Choose a sender and receiver, enter an amount, and send. Transfers settle instantly and update balances everywhere." },
-    { view: "history", title: "History", text: "Pick any account to see the transfers it sent or received, with dates and notes." },
-    { view: "overview", title: "You are all set", text: "The Overview shows live metrics and recent activity. Try the Run demo button to see it in action." }
+    { view: "overview", title: "Welcome to BrainRidge Bank", text: "This is your online banking dashboard. It shows your total balance, your accounts, and recent activity. Here is a quick tour." },
+    { view: "accounts", title: "Your accounts", text: "Open new accounts on the left and see each one as a card on the right, with its balance and a masked account number. You need two accounts to make a transfer." },
+    { view: "transfer", title: "Send money", text: "Choose a sender and receiver, enter an amount, and send. The preview shows both parties, and balances update instantly everywhere." },
+    { view: "history", title: "Transactions", text: "Pick any account to see the transfers it sent or received. Money out shows in red, money in shows in green." },
+    { view: "overview", title: "You're all set", text: "Back on the dashboard you'll see live totals and activity. Try the Run demo button to watch it work end to end." }
 ];
 let tourIdx = 0;
 
