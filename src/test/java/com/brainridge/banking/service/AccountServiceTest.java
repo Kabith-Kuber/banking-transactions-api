@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -70,5 +71,18 @@ class AccountServiceTest {
         when(accountRepository.findById(accountId)).thenReturn(Optional.empty());
 
         assertThrows(AccountNotFoundException.class, () -> accountService.getAccount(accountId));
+    }
+
+    @Test
+    void getAccounts_returnsAllAccounts() {
+        Account first = new Account(UUID.randomUUID(), "Alice", new BigDecimal("100.00"), Instant.now());
+        Account second = new Account(UUID.randomUUID(), "Bob", new BigDecimal("200.00"), Instant.now());
+        when(accountRepository.findAll()).thenReturn(List.of(first, second));
+
+        List<AccountResponse> response = accountService.getAccounts();
+
+        assertEquals(2, response.size());
+        assertEquals("Alice", response.get(0).getOwnerName());
+        assertEquals("Bob", response.get(1).getOwnerName());
     }
 }

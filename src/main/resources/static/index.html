@@ -6,8 +6,8 @@
     <title>BrainRidge Bank</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;750&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./css/styles.css?v=7">
 </head>
 <body>
     <div class="app">
@@ -19,12 +19,12 @@
                 </span>
                 <span class="brand-text">
                     <strong>BrainRidge</strong>
-                    <span>Online Banking</span>
+                    <span>Transaction operations</span>
                 </span>
             </div>
 
             <nav class="sidebar-nav">
-                <span class="nav-label">Banking</span>
+                <span class="nav-label">Workspace</span>
                 <button class="nav-item active" data-view="overview" type="button">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
                     Dashboard
@@ -61,11 +61,12 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                 </button>
                 <nav class="breadcrumb" aria-label="Breadcrumb">
-                    <span>BrainRidge Bank</span>
+                    <span>Operations</span>
                     <span>/</span>
                     <b id="breadcrumbCurrent">Dashboard</b>
                 </nav>
                 <div class="topbar-actions">
+                    <span class="environment-label"><i></i> In-memory environment</span>
                     <button class="btn btn--ghost btn--sm" id="startTourBtn" type="button">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                         Take a tour
@@ -82,79 +83,68 @@
                 <section class="view active" id="view-overview" data-tour="overview">
                     <div class="page-header">
                         <div>
-                            <h1>Welcome back</h1>
-                            <p>Here's what's happening across your BrainRidge accounts today.</p>
+                            <span class="page-kicker">BANKING TRANSACTIONS API</span>
+                            <h1>Financial overview</h1>
+                            <p>Manage accounts, move funds, and inspect the transaction ledger.</p>
                         </div>
                     </div>
 
-                    <!-- Total balance hero -->
-                    <div class="balance-hero" data-tour="hero">
-                        <div class="balance-hero-main">
-                            <span class="balance-hero-label">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                                Total balance
-                            </span>
-                            <div class="balance-hero-value numeric" id="metricBalance">$0.00</div>
-                            <div class="balance-hero-sub" id="metricBalanceSub">Across all accounts</div>
-                            <div class="balance-hero-actions">
-                                <button class="btn btn--on-accent" data-goto="transfer" type="button">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3 21 7l-4 4"/><path d="M21 7H8"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h13"/></svg>
-                                    Send money
-                                </button>
-                                <button class="btn btn--on-accent-ghost" data-goto="accounts" type="button">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                    Open account
-                                </button>
-                            </div>
+                    <div class="dashboard-summary" data-tour="hero">
+                        <div class="summary-primary">
+                            <span class="eyebrow">Available across your accounts</span>
+                            <div class="summary-balance numeric" id="metricBalance">$0.00</div>
+                            <p id="metricBalanceSub">Open an account to start using the dashboard.</p>
                         </div>
-                        <div class="balance-hero-stats">
-                            <div class="hero-stat">
-                                <div class="hs-label">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-                                    Accounts
-                                </div>
-                                <div class="hs-value numeric" id="metricAccounts">0</div>
-                            </div>
-                            <div class="hero-stat">
-                                <div class="hs-label">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3 21 7l-4 4"/><path d="M21 7H8"/><path d="M7 21l-4-4 4-4"/><path d="M3 17h13"/></svg>
-                                    Transfers
-                                </div>
-                                <div class="hs-value numeric" id="metricTransfers">0</div>
-                            </div>
-                            <div class="hero-stat" style="grid-column:1 / -1;">
-                                <div class="hs-label">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-                                    Volume moved this session
-                                </div>
-                                <div class="hs-value numeric" id="metricVolume">$0.00</div>
-                            </div>
+                        <div class="summary-stat">
+                            <span>Accounts</span>
+                            <strong class="numeric" id="metricAccounts">0</strong>
+                        </div>
+                        <div class="summary-stat">
+                            <span>Transfers made</span>
+                            <strong class="numeric" id="metricTransfers">0</strong>
+                        </div>
+                        <div class="summary-stat">
+                            <span>Amount moved</span>
+                            <strong class="numeric" id="metricVolume">$0.00</strong>
+                        </div>
+                        <div class="summary-actions">
+                            <button class="btn btn--primary" data-goto="transfer" type="button">Send money</button>
+                            <button class="btn btn--secondary" data-goto="accounts" type="button">Open account</button>
                         </div>
                     </div>
 
-                    <!-- Your accounts -->
-                    <div class="section-head">
-                        <h2>Your accounts</h2>
-                        <button class="btn btn--secondary btn--sm" data-goto="accounts" type="button">Manage accounts</button>
-                    </div>
-                    <div class="account-grid" id="overviewAccountsGrid"></div>
-
-                    <!-- Activity + distribution -->
-                    <div class="grid-2" style="margin-top:24px;">
-                        <div class="card">
+                    <div class="dashboard-workspace">
+                        <div class="card account-focus-card">
                             <div class="card-header">
-                                <div class="card-title">Recent activity</div>
-                                <button class="btn btn--ghost btn--sm" id="clearActivityBtn" type="button">Clear</button>
+                                <div>
+                                    <div class="card-title">Account overview</div>
+                                    <div class="card-desc">Select an account to inspect its balance and activity.</div>
+                                </div>
+                                <button class="btn btn--ghost btn--sm" data-goto="accounts" type="button">View all</button>
                             </div>
-                            <div class="card-body flush">
-                                <div class="feed" id="activityFeed"></div>
-                            </div>
+                            <div class="card-body" id="dashboardAccountDetail"></div>
                         </div>
-                        <div class="card">
-                            <div class="card-header"><div class="card-title">Balance distribution</div></div>
-                            <div class="card-body" id="distributionBody"></div>
+                        <div class="dashboard-rail">
+                            <div class="card quick-actions-card">
+                                <div class="card-header"><div class="card-title">Quick actions</div></div>
+                                <div class="card-body quick-actions">
+                                    <button class="quick-action" data-goto="accounts" type="button"><span>+</span> Open an account</button>
+                                    <button class="quick-action" data-goto="transfer" type="button"><span>↗</span> Transfer money</button>
+                                    <button class="quick-action" data-goto="history" type="button"><span>⌕</span> View transactions</button>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="card-header"><div class="card-title">Balance mix</div></div>
+                                <div class="card-body" id="distributionBody"></div>
+                            </div>
                         </div>
                     </div>
+
+                    <div class="section-head">
+                        <h2>Recent activity</h2>
+                        <button class="btn btn--ghost btn--sm" id="clearActivityBtn" type="button">Clear activity</button>
+                    </div>
+                    <div class="card"><div class="card-body flush"><div class="feed" id="activityFeed"></div></div></div>
                 </section>
 
                 <!-- ============ Accounts ============ -->
@@ -163,9 +153,6 @@
                         <div>
                             <h1>Accounts</h1>
                             <p>Open new accounts and track every balance in one place.</p>
-                        </div>
-                        <div class="page-header-actions">
-                            <button class="btn btn--secondary" id="clearAccountsBtn" type="button">Clear saved list</button>
                         </div>
                     </div>
 
@@ -205,6 +192,13 @@
                             <div class="section-head" style="margin-top:0;">
                                 <h2>All accounts</h2>
                                 <span class="badge badge--neutral" id="accountsCountBadge">0 total</span>
+                            </div>
+                            <div class="account-toolbar">
+                                <label class="search-field" for="accountSearch">
+                                    <span aria-hidden="true">⌕</span>
+                                    <input class="input" id="accountSearch" type="search" placeholder="Search accounts by name or number">
+                                </label>
+                                <span class="toolbar-note" id="accountSearchCount"></span>
                             </div>
                             <div class="account-grid" id="accountsGrid"></div>
                         </div>
@@ -251,6 +245,12 @@
                                             <span class="affix">$</span>
                                             <input class="input" type="number" id="transferAmount" min="0.01" step="0.01" placeholder="150.00" required>
                                         </div>
+                                        <div class="quick-amounts" aria-label="Quick amount options">
+                                            <button type="button" data-amount="25">$25</button>
+                                            <button type="button" data-amount="50">$50</button>
+                                            <button type="button" data-amount="100">$100</button>
+                                            <button type="button" data-amount="250">$250</button>
+                                        </div>
                                         <span class="field-error" id="amountError">Enter an amount greater than 0.</span>
                                     </div>
                                     <div class="field">
@@ -296,6 +296,14 @@
                                         <option value="">Select account</option>
                                     </select>
                                 </div>
+                                <div class="field" style="min-width:160px;">
+                                    <label class="field-label" for="historyFilter">Show</label>
+                                    <select class="select" id="historyFilter">
+                                        <option value="all">All activity</option>
+                                        <option value="sent">Money sent</option>
+                                        <option value="received">Money received</option>
+                                    </select>
+                                </div>
                                 <button class="btn btn--primary" type="submit" id="historyBtn">Load transactions</button>
                             </form>
                         </div>
@@ -330,6 +338,6 @@
 
     <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="false"></div>
 
-    <script src="/js/app.js"></script>
+    <script src="./js/app.js?v=7"></script>
 </body>
 </html>

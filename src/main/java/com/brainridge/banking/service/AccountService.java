@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -68,5 +69,12 @@ public class AccountService {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new AccountNotFoundException(accountId));
         return AccountResponse.from(account);
+    }
+
+    /** Returns the accounts currently available in the in-memory store. */
+    public List<AccountResponse> getAccounts() {
+        return accountRepository.findAll().stream()
+                .map(AccountResponse::from)
+                .toList();
     }
 }

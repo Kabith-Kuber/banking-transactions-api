@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -68,6 +69,12 @@ public class AccountController {
     })
     public AccountResponse createAccount(@Valid @RequestBody CreateAccountRequest request) {
         return accountService.createAccount(request.getOwnerName(), request.getInitialBalance());
+    }
+
+    @GetMapping
+    @Operation(summary = "List all accounts")
+    public List<AccountResponse> getAccounts() {
+        return accountService.getAccounts();
     }
 
     /**

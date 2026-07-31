@@ -2,6 +2,7 @@ package com.brainridge.banking.repository;
 
 import com.brainridge.banking.model.Account;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -27,6 +28,9 @@ public interface AccountRepository {
      *         of risking a {@code null}.
      */
     Optional<Account> findById(UUID id);
+
+    /** Returns every account currently held in memory. */
+    List<Account> findAll();
 
     /** Cheap existence check used before reading an account's history. */
     boolean existsById(UUID id);

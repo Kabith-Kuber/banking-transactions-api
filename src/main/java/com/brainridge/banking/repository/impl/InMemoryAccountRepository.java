@@ -4,6 +4,8 @@ import com.brainridge.banking.model.Account;
 import com.brainridge.banking.repository.AccountRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,6 +42,13 @@ public class InMemoryAccountRepository implements AccountRepository {
     public Optional<Account> findById(UUID id) {
         // ofNullable turns a possible null (missing key) into an empty Optional.
         return Optional.ofNullable(accounts.get(id));
+    }
+
+    @Override
+    public List<Account> findAll() {
+        return accounts.values().stream()
+                .sorted(Comparator.comparing(Account::getCreatedAt))
+                .toList();
     }
 
     @Override

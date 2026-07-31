@@ -59,7 +59,7 @@ Started BankingApplication
 
 Go to: **http://localhost:8080**
 
-You'll see a friendly dashboard with a **Start walkthrough** button and a **Run quick demo** button.
+You'll see the banking dashboard with **Take a tour** and **Run demo** buttons.
 
 > **Tip:** Leave the terminal window open while using the app. Closing it stops the server.
 
@@ -67,7 +67,7 @@ You'll see a friendly dashboard with a **Start walkthrough** button and a **Run 
 
 ## How to Use the App (Full Walkthrough)
 
-### First time? Click "Run quick demo"
+### First time? Click "Run demo"
 
 This automatically:
 1. Creates **Alice** with $1,000
@@ -75,7 +75,7 @@ This automatically:
 3. Sends **$150** from Alice to Bob (for "Rent payment")
 4. Shows you the updated balances and transaction history
 
-You can watch the **"What just happened"** panel on the right for a plain-English log.
+The dashboard updates its balances and recent activity automatically.
 
 ---
 
@@ -83,7 +83,7 @@ You can watch the **"What just happened"** panel on the right for a plain-Englis
 
 #### Step 1 — Create an account
 
-1. Go to **"1 — Create an account"**
+1. Open **Accounts**
 2. Enter a name (e.g. `Alice`)
 3. Enter a starting balance (e.g. `1000`)
 4. Click **Create account**
@@ -96,7 +96,7 @@ You can watch the **"What just happened"** panel on the right for a plain-Englis
 
 #### Step 2 — Send money
 
-1. Go to **"2 — Send money"**
+1. Open **Send Money**
 2. **From:** pick who is paying (e.g. Alice)
 3. **To:** pick who receives (e.g. Bob)
 4. **Amount:** e.g. `150`
@@ -116,17 +116,16 @@ You can watch the **"What just happened"** panel on the right for a plain-Englis
 
 #### Step 3 — Check balance
 
-1. Go to **"3 — Check balance"**
-2. Pick an account
-3. Click **Check balance**
+1. Open **Dashboard**
+2. Select an account row
 
-**What happens:** You see the current balance and when the account was opened.
+**What happens:** The account overview shows its current balance and when it was opened.
 
 ---
 
 #### Step 4 — View transaction history
 
-1. Go to **"4 — Transaction history"**
+1. Open **Transactions**
 2. Pick an account
 3. Click **Load history**
 
@@ -143,15 +142,7 @@ You can watch the **"What just happened"** panel on the right for a plain-Englis
 
 ---
 
-### Progress tracker
-
-At the top of the page, **"Your progress"** shows which steps you've completed:
-1. Create an account
-2. Create a second account
-3. Send a transfer
-4. View history
-
-It also tells you **what to do next**.
+The dashboard also provides quick links to each operation and a recent activity list.
 
 ---
 
@@ -161,7 +152,7 @@ It also tells you **what to do next**.
 |---------|----------|
 | "Server offline" at the top | Run `run.bat` and wait for `Started BankingApplication` |
 | Dropdowns are empty | Create at least one account first |
-| "Account not found" | You restarted the server — data is cleared. Create new accounts. |
+| "Account not found" | Refresh the page. The UI reloads the current in-memory account list from the API. |
 | "Insufficient funds" | The sender doesn't have enough money. Lower the amount. |
 | Accounts disappeared | Data is in-memory only. Restarting the server wipes everything. |
 
@@ -222,6 +213,7 @@ Browser (UI)  →  REST API  →  Service Layer  →  In-Memory Storage
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `POST` | `/api/v1/accounts` | Create account |
+| `GET` | `/api/v1/accounts` | List accounts currently held in memory |
 | `GET` | `/api/v1/accounts/{id}` | Get account |
 | `POST` | `/api/v1/transfers` | Transfer funds |
 | `GET` | `/api/v1/accounts/{id}/transactions` | Paginated history |

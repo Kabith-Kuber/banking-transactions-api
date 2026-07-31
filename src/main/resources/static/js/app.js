@@ -11,6 +11,7 @@ const API = "/api/v1";
 const STORAGE_KEY = "brainridge_accounts";
 const ACTIVITY_KEY = "brainridge_activity";
 const STATS_KEY = "brainridge_stats";
+let selectedAccountId = null;
 
 const $ = (id) => document.getElementById(id);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -102,6 +103,7 @@ const postTransfer = (fromAccountId, toAccountId, amount, description) =>
     api(`${API}/transfers`, { method: "POST", body: JSON.stringify({ fromAccountId, toAccountId, amount, description }) });
 
 const getAccount = (id) => api(`${API}/accounts/${id}`);
+const fetchAccounts = () => api(`${API}/accounts`);
 const getHistory = (id) => api(`${API}/accounts/${id}/transactions?page=0&size=20`);
 
 async function refreshBalance(id) {
@@ -110,10 +112,10 @@ async function refreshBalance(id) {
     return acc;
 }
 
-async function refreshAll() {
-    for (const a of getAccounts()) {
-        try { await refreshBalance(a.id); } catch { /* server may have reset */ }
-    }
+async function syncAccounts() {
+    const accounts = await fetchAccounts();
+    setAccounts(accounts);
+    renderAll();
 }
 
 /* ---------------- Toasts ---------------- */
@@ -218,7 +220,7 @@ function renderDistribution() {
 /* ---------------- Rendering: account tiles ---------------- */
 function accountCard(a) {
     return `
-        <article class="acct-card">
+        <article class="acct-card ${a.id === selectedAccountId ? "is-selected" : ""}" data-select-account="${a.id}" tabindex="0" role="button" aria-label="View ${esc(a.ownerName)} account details">
             <div class="acct-card-top">
                 <span class="acct-chip" aria-hidden="true"></span>
                 <span class="badge badge--success">Active</span>
@@ -251,6 +253,21 @@ function wireAccountActions(scope) {
     scope.querySelectorAll("[data-action]").forEach((btn) => {
         btn.addEventListener("click", () => onAccountRowAction(btn.dataset.action, btn.dataset.id, btn));
     });
+    scope.querySelectorAll("[data-select-account]").forEach((card) => {
+        const select = () => {
+            selectedAccountId = card.dataset.selectAccount;
+            renderAll();
+        };
+        card.addEventListener("click", (event) => {
+            if (!event.target.closest("[data-action]")) select();
+        });
+        card.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                select();
+            }
+        });
+    });
 }
 
 function renderAccountsGrid() {
@@ -260,20 +277,59 @@ function renderAccountsGrid() {
         grid.innerHTML = spanEmpty(emptyBlock("users", "No accounts yet", "Use the form on the left to open your first account."));
         return;
     }
-    grid.innerHTML = accounts.map(accountCard).join("");
+    const query = $("accountSearch").value.trim().toLowerCase();
+    const visibleAccounts = accounts.filter((account) =>
+        account.ownerName.toLowerCase().includes(query) ||
+        account.id.toLowerCase().includes(query.replaceAll(" ", ""))
+    );
+    $("accountSearchCount").textContent = query
+        ? `${visibleAccounts.length} matching`
+        : `${accounts.length} available`;
+    grid.innerHTML = visibleAccounts.length
+        ? visibleAccounts.map(accountCard).join("")
+        : spanEmpty(emptyBlock("users", "No matching accounts", "Try a different account holder name or account number."));
     wireAccountActions(grid);
 }
 
-function renderOverviewAccounts() {
-    const grid = $("overviewAccountsGrid");
+function renderDashboardFocus() {
+    const container = $("dashboardAccountDetail");
     const accounts = getAccounts();
-    if (accounts.length === 0) {
-        grid.innerHTML = spanEmpty(emptyBlock("users", "No accounts yet", "Open your first account to get started.", "accounts", "Open account"));
+    if (!accounts.length) {
+        container.innerHTML = `<div class="focus-empty">${emptyBlock("users", "No account selected", "Open an account to see its live balance and quick actions here.", "accounts", "Open account")}</div>`;
         wireGotoButtons();
         return;
     }
-    grid.innerHTML = accounts.slice(0, 6).map(accountCard).join("");
-    wireAccountActions(grid);
+
+    if (!accounts.some((account) => account.id === selectedAccountId)) {
+        selectedAccountId = accounts[0].id;
+    }
+    const account = accounts.find((item) => item.id === selectedAccountId);
+    container.innerHTML = `
+        <div class="focus-account">
+            <span class="avatar">${esc(initials(account.ownerName))}</span>
+            <div><h3>${esc(account.ownerName)}</h3><p>${esc(maskedNumber(account.id))} · Active account</p></div>
+            <div class="focus-balance"><span>Available balance</span><strong class="numeric">${money(account.balance)}</strong></div>
+        </div>
+        <div class="focus-divider"></div>
+        <div class="focus-meta">
+            <div><span>Opened</span><strong>${new Date(account.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</strong></div>
+            <div><span>Account status</span><strong>Active</strong></div>
+            <div><span>Account number</span><strong>${esc(maskedNumber(account.id))}</strong></div>
+        </div>
+        <div class="focus-actions">
+            <button class="btn btn--primary btn--sm" data-focus-action="transfer" type="button">Transfer from this account</button>
+            <button class="btn btn--secondary btn--sm" data-focus-action="history" type="button">View transactions</button>
+        </div>`;
+    container.querySelector('[data-focus-action="transfer"]').addEventListener("click", () => {
+        setView("transfer");
+        $("fromAccount").value = account.id;
+        renderTransferPreview();
+    });
+    container.querySelector('[data-focus-action="history"]').addEventListener("click", () => {
+        setView("history");
+        $("historyAccount").value = account.id;
+        $("historyForm").requestSubmit();
+    });
 }
 
 async function onAccountRowAction(action, id, btn) {
@@ -382,15 +438,26 @@ function renderTransferPreview() {
 
     const arrow = `<div class="xfer-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg></div>`;
 
-    box.innerHTML = `<div class="xfer-preview">${party("From", from)}${arrow}${party("To", to)}</div>`;
+    const amount = Number($("transferAmount").value) || 0;
+    const projection = from && to && amount > 0 ? `
+        <div class="transfer-projection">
+            <div><span>Sender after transfer</span><strong class="numeric">${money(Number(from.balance) - amount)}</strong></div>
+            <b>→</b>
+            <div><span>Receiver after transfer</span><strong class="numeric">${money(Number(to.balance) + amount)}</strong></div>
+        </div>` : "";
+    box.innerHTML = `<div class="xfer-preview">${party("From", from)}${arrow}${party("To", to)}${projection}</div>`;
 }
 
 /* ---------------- Master render ---------------- */
 function renderAll() {
+    const accounts = getAccounts();
+    if (accounts.length && !accounts.some((account) => account.id === selectedAccountId)) {
+        selectedAccountId = accounts[0].id;
+    }
     renderMetrics();
     renderDistribution();
     renderAccountsGrid();
-    renderOverviewAccounts();
+    renderDashboardFocus();
     populateSelects();
 }
 
@@ -530,7 +597,16 @@ $("transferReset").addEventListener("click", () => {
 });
 ["fromAccount", "toAccount"].forEach((id) =>
     $(id).addEventListener("change", () => { renderTransferPreview(); setInvalid(id === "fromAccount" ? "fieldFrom" : "fieldTo", false); }));
-$("transferAmount").addEventListener("input", () => setInvalid("fieldAmount", false));
+$("transferAmount").addEventListener("input", () => {
+    setInvalid("fieldAmount", false);
+    renderTransferPreview();
+});
+$$("[data-amount]").forEach((button) => button.addEventListener("click", () => {
+    $("transferAmount").value = button.dataset.amount;
+    $$("[data-amount]").forEach((item) => item.classList.toggle("active", item === button));
+    setInvalid("fieldAmount", false);
+    renderTransferPreview();
+}));
 
 /* ---------------- Transactions (history) ---------------- */
 $("historyForm").addEventListener("submit", async (e) => {
@@ -551,7 +627,16 @@ $("historyForm").addEventListener("submit", async (e) => {
             container.innerHTML = emptyBlock("history", "No transactions", `${name} has not sent or received any transfers yet.`);
             return;
         }
-        const rows = page.content.map((tx) => {
+        const filter = $("historyFilter").value;
+        const transactions = page.content.filter((tx) => {
+            if (filter === "all") return true;
+            return filter === "sent" ? tx.fromAccountId === accountId : tx.toAccountId === accountId;
+        });
+        if (!transactions.length) {
+            container.innerHTML = emptyBlock("history", "No matching transactions", "Try changing the activity filter.");
+            return;
+        }
+        const rows = transactions.map((tx) => {
             // From this account's point of view: money out = debit, money in = credit.
             const sent = tx.fromAccountId === accountId;
             const otherId = sent ? tx.toAccountId : tx.fromAccountId;
@@ -575,7 +660,7 @@ $("historyForm").addEventListener("submit", async (e) => {
                     <tbody>${rows}</tbody>
                 </table>
             </div>`;
-        logActivity(`Loaded ${page.totalElements} transaction(s) for <b>${esc(name)}</b>.`, "info");
+        logActivity(`Loaded ${transactions.length} transaction(s) for <b>${esc(name)}</b>.`, "info");
     } catch (err) {
         container.innerHTML = emptyBlock("history", "Could not load transactions", err.message);
         toast("Could not load transactions", err.message, "error");
@@ -593,16 +678,14 @@ function skeletonTable() {
     return `<div class="table-wrap"><table class="data"><thead><tr><th>Type</th><th>Counterparty</th><th>Note</th><th>Date</th><th class="col-num">Amount</th></tr></thead><tbody>${row.repeat(4)}</tbody></table></div>`;
 }
 
-/* ---------------- Clear actions ---------------- */
-$("clearAccountsBtn").addEventListener("click", () => {
-    if (!confirm("Clear the saved accounts list from this browser? Server data is not affected.")) return;
-    setAccounts([]);
-    renderAll();
-    toast("List cleared", "Saved accounts removed from this browser.", "info");
-});
+/* ---------------- Clear activity ---------------- */
 $("clearActivityBtn").addEventListener("click", () => {
     localStorage.removeItem(ACTIVITY_KEY);
     renderActivity();
+});
+$("accountSearch").addEventListener("input", renderAccountsGrid);
+$("historyFilter").addEventListener("change", () => {
+    if ($("historyAccount").value) $("historyForm").requestSubmit();
 });
 
 /* ---------------- Quick demo ---------------- */
@@ -679,5 +762,17 @@ document.addEventListener("keydown", (e) => { if (e.key === "Escape") { endTour(
 wireGotoButtons();
 renderAll();
 renderActivity();
-checkServer();
-refreshAll().then(() => { renderAll(); wireGotoButtons(); });
+if (window.location.protocol === "file:") {
+    $("serverStatus").className = "server-status offline";
+    $("serverStatusText").textContent = "Open localhost:8080";
+    setTimeout(() => toast(
+        "Open the running application",
+        "This preview can show the layout, but banking actions require http://localhost:8080.",
+        "info"
+    ), 200);
+} else {
+    checkServer();
+    syncAccounts()
+        .then(wireGotoButtons)
+        .catch((error) => toast("Could not load accounts", error.message, "error"));
+}
