@@ -16,6 +16,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * End-to-end tests that run the whole application in memory.
+ *
+ * <p>Unlike the service unit tests, nothing is mocked here: {@code @SpringBootTest}
+ * boots the real controllers, services, and in-memory repositories, and
+ * {@code MockMvc} sends real HTTP-style requests through them. This proves the
+ * layers are wired together correctly and that all six requirements hold from
+ * the outside in — happy path plus the not-found, insufficient-funds, and
+ * validation error cases.
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 class BankingApiIntegrationTest {

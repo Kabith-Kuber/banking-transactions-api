@@ -15,6 +15,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * HTTP entry point for {@code /api/v1/transfers} (the "Controller" layer).
+ *
+ * <p>Transfers get their own endpoint because moving money is a distinct action
+ * rather than a property of one account. Like the account controller, this
+ * class only unpacks the request and delegates to {@link TransferService}.
+ */
 @RestController
 @RequestMapping("/api/v1/transfers")
 @Tag(name = "Transfers", description = "Fund transfer operations")
@@ -26,6 +33,14 @@ public class TransferController {
         this.transferService = transferService;
     }
 
+    /**
+     * {@code POST /api/v1/transfers} — move money between two accounts.
+     *
+     * <p>{@code @Valid} enforces the basic input rules on {@link TransferRequest}
+     * first. The service then applies the money rules and may raise a
+     * not-found (404) or insufficient-funds (422) error, which the global
+     * handler formats. On success we return {@code 201 Created}.
+     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Transfer funds between accounts")

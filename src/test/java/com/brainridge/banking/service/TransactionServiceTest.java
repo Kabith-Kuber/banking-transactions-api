@@ -22,6 +22,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
+/**
+ * Unit tests for {@link TransactionService}, the history/pagination logic.
+ *
+ * <p>Verifies the two behaviours that matter: a valid account returns its
+ * transactions wrapped in a page, and an unknown account is rejected with
+ * {@link AccountNotFoundException} before any history is read.
+ */
 @ExtendWith(MockitoExtension.class)
 class TransactionServiceTest {
 

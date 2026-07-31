@@ -15,11 +15,28 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import java.time.Instant;
 import java.util.stream.Collectors;
 
+/**
+ * One central place that turns exceptions into clean HTTP error responses.
+ *
+ * <p>This is the app's answer to requirement #5, "handle errors gracefully."
+ * Instead of every controller writing its own try/catch, controllers and
+ * services simply throw meaningful exceptions and this class decides:
+ * <ol>
+ *   <li>which HTTP status code fits the problem, and</li>
+ *   <li>what the {@link ErrorResponse} body should say.</li>
+ * </ol>
+ *
+ * <p>{@code @RestControllerAdvice} tells Spring to apply these handlers to
+ * every controller in the application. When a matching exception is thrown,
+ * Spring routes it to the method annotated with {@code @ExceptionHandler} for
+ * that exception type.
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    /** Unknown account id -> 404 Not Found. */
     @ExceptionHandler(AccountNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleAccountNotFound(
             AccountNotFoundException ex, HttpServletRequest request) {
@@ -27,6 +44,7 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
+    /** Not enough money -> 422 Unprocessable Entity (valid request, failed business rule). */
     @ExceptionHandler(InsufficientFundsException.class)
     public ResponseEntity<ErrorResponse> handleInsufficientFunds(
             InsufficientFundsException ex, HttpServletRequest request) {
@@ -34,6 +52,7 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage(), request);
     }
 
+    /** Logically invalid transfer (e.g. same account) -> 400 Bad Request. */
     @ExceptionHandler(InvalidTransferException.class)
     public ResponseEntity<ErrorResponse> handleInvalidTransfer(
             InvalidTransferException ex, HttpServletRequest request) {
@@ -41,6 +60,11 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
     }
 
+    /**
+     * A {@code @Valid} DTO failed its validation rules -> 400 Bad Request.
+     * We collect every field error into one readable message so the caller
+     * learns about all the problems at once, not just the first.
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidationErrors(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
@@ -51,6 +75,10 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, message, request);
     }
 
+    /**
+     * A path/query value couldn't be converted to the expected type — for
+     * example a non-UUID account id in the URL -> 400 Bad Request.
+     */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponse> handleTypeMismatch(
             MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
@@ -59,18 +87,29 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, message, request);
     }
 
+    /**
+     * A request hit a path with no matching resource (e.g. a missing static
+     * file) -> 404 Not Found, in our standard error shape rather than Spring's
+     * default page.
+     */
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFoundResource(
             NoResourceFoundException ex, HttpServletRequest request) {
         return buildResponse(HttpStatus.NOT_FOUND, "Resource not found", request);
     }
 
+    /**
+     * Safety net for anything unexpected -> 500 Internal Server Error.
+     * We log the full stack trace for ourselves but return a generic message,
+     * so internal details are never exposed to callers.
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex, HttpServletRequest request) {
         log.error("Unexpected error", ex);
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred", request);
     }
 
+    /** Shared helper that assembles the consistent {@link ErrorResponse} body. */
     private ResponseEntity<ErrorResponse> buildResponse(
             HttpStatus status, String message, HttpServletRequest request) {
         ErrorResponse body = new ErrorResponse(

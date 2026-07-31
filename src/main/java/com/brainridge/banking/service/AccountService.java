@@ -13,6 +13,19 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * Business logic for accounts (the "Service" layer).
+ *
+ * <p>The service sits between the controllers (which speak HTTP) and the
+ * repositories (which speak storage). Controllers stay thin and just forward
+ * requests here; this class owns the actual rules for creating and reading
+ * accounts.
+ *
+ * <p><b>Dependency injection:</b> the {@link AccountRepository} is passed into
+ * the constructor rather than created here. Spring supplies the right
+ * implementation automatically, which keeps this class easy to test (a fake
+ * repository can be injected instead).
+ */
 @Service
 public class AccountService {
 
@@ -24,6 +37,15 @@ public class AccountService {
         this.accountRepository = accountRepository;
     }
 
+    /**
+     * Creates and stores a brand-new account.
+     *
+     * <p>The server generates the id and creation time — the caller only
+     * supplies the owner's name and starting balance. The balance is normalized
+     * to two decimal places so it is stored consistently.
+     *
+     * @return a DTO describing the account that was created
+     */
     public AccountResponse createAccount(String ownerName, BigDecimal initialBalance) {
         Account account = new Account(
                 UUID.randomUUID(),
@@ -36,15 +58,15 @@ public class AccountService {
         return AccountResponse.from(account);
     }
 
+    /**
+     * Looks up a single account by id.
+     *
+     * @throws AccountNotFoundException if no account has that id, which the
+     *         global handler turns into a 404 response
+     */
     public AccountResponse getAccount(UUID accountId) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new AccountNotFoundException(accountId));
         return AccountResponse.from(account);
-    }
-
-    public void ensureAccountExists(UUID accountId) {
-        if (!accountRepository.existsById(accountId)) {
-            throw new AccountNotFoundException(accountId);
-        }
     }
 }

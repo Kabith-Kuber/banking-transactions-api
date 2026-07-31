@@ -23,6 +23,22 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
+/**
+ * HTTP entry point for everything under {@code /api/v1/accounts} (the "Controller" layer).
+ *
+ * <p>A controller's job is deliberately small: translate an HTTP request into a
+ * service call and return the result. All real logic lives in the services, so
+ * this class stays easy to read.
+ *
+ * <p><b>How the pieces fit together:</b>
+ * <ul>
+ *   <li>{@code @RestController} — responses are serialized straight to JSON.</li>
+ *   <li>{@code @RequestMapping("/api/v1/accounts")} — the shared path prefix
+ *       for every method here (requirement #1: sensible endpoint paths).</li>
+ *   <li>The services are injected via the constructor (requirement #2:
+ *       dependency injection).</li>
+ * </ul>
+ */
 @RestController
 @RequestMapping("/api/v1/accounts")
 @Tag(name = "Accounts", description = "Account management operations")
@@ -36,6 +52,13 @@ public class AccountController {
         this.transactionService = transactionService;
     }
 
+    /**
+     * {@code POST /api/v1/accounts} — create a new account.
+     *
+     * <p>{@code @Valid} triggers the validation rules on
+     * {@link CreateAccountRequest} before this method runs; invalid input never
+     * reaches the service. On success we return {@code 201 Created}.
+     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create a new account")
@@ -47,6 +70,12 @@ public class AccountController {
         return accountService.createAccount(request.getOwnerName(), request.getInitialBalance());
     }
 
+    /**
+     * {@code GET /api/v1/accounts/{accountId}} — fetch a single account.
+     *
+     * <p>Spring converts the {@code {accountId}} path segment into a
+     * {@link UUID}. A missing account results in a 404 via the global handler.
+     */
     @GetMapping("/{accountId}")
     @Operation(summary = "Get account by ID")
     @ApiResponses({
@@ -57,6 +86,12 @@ public class AccountController {
         return accountService.getAccount(accountId);
     }
 
+    /**
+     * {@code GET /api/v1/accounts/{accountId}/transactions} — paginated history.
+     *
+     * <p>{@code page} and {@code size} are optional query parameters; when
+     * omitted the service falls back to sensible defaults.
+     */
     @GetMapping("/{accountId}/transactions")
     @Operation(summary = "Get paginated transaction history for an account")
     @ApiResponses({

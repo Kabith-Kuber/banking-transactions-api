@@ -26,6 +26,15 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * Unit tests for {@link TransferService}, the money-moving logic.
+ *
+ * <p>Both repositories are mocked so we can drive each scenario precisely:
+ * a happy-path transfer, and every failure the service must guard against
+ * (same account, missing account on either side, and insufficient funds).
+ * {@code @BeforeEach setUp} creates two fresh accounts before every test so
+ * cases never leak state into one another.
+ */
 @ExtendWith(MockitoExtension.class)
 class TransferServiceTest {
 

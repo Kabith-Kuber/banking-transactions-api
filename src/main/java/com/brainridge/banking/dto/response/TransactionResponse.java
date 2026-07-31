@@ -7,6 +7,13 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * Outgoing representation of a single transaction in an account's history.
+ *
+ * <p>Unlike {@link TransferResponse} (a short confirmation), this includes the
+ * full detail of a past transaction, including its description and type, since
+ * it is what history listings display.
+ */
 public class TransactionResponse {
 
     private UUID id;
@@ -17,6 +24,7 @@ public class TransactionResponse {
     private Instant timestamp;
     private TransactionType type;
 
+    /** Copies a domain {@link Transaction} into its API representation. */
     public static TransactionResponse from(Transaction transaction) {
         TransactionResponse response = new TransactionResponse();
         response.id = transaction.getId();
