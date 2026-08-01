@@ -18,6 +18,10 @@ WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
 ENV PORT=80
+ENV JAVA_HOME=/opt/java/openjdk
+ENV PATH="/opt/java/openjdk/bin:${PATH}"
+
 EXPOSE 80
 
-CMD ["sh", "-c", "java -jar app.jar --server.port=${PORT}"]
+# Use the absolute Java path so the container always starts correctly on Vercel.
+ENTRYPOINT ["/bin/sh", "-c", "exec /opt/java/openjdk/bin/java -jar /app/app.jar --server.port=${PORT:-80}"]
