@@ -2,6 +2,7 @@ package com.brainridge.banking.repository.impl;
 
 import com.brainridge.banking.model.Account;
 import com.brainridge.banking.repository.AccountRepository;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
 import java.util.Comparator;
@@ -27,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * needed.
  */
 @Repository
+@ConditionalOnProperty(name = "banking.storage", havingValue = "memory", matchIfMissing = true)
 public class InMemoryAccountRepository implements AccountRepository {
 
     /** The actual storage: account id -> account. */

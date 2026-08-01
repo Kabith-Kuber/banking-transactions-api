@@ -2,6 +2,7 @@ package com.brainridge.banking.repository.impl;
 
 import com.brainridge.banking.model.Transaction;
 import com.brainridge.banking.repository.TransactionRepository;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Repository;
 
 import java.util.Comparator;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
  * {@link InMemoryAccountRepository}.
  */
 @Repository
+@ConditionalOnProperty(name = "banking.storage", havingValue = "memory", matchIfMissing = true)
 public class InMemoryTransactionRepository implements TransactionRepository {
 
     /** The actual storage: transaction id -> transaction. */

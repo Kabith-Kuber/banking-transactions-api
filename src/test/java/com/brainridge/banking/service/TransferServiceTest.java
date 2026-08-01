@@ -11,7 +11,6 @@ import com.brainridge.banking.repository.TransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -28,12 +27,6 @@ import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for {@link TransferService}, the money-moving logic.
- *
- * <p>Both repositories are mocked so we can drive each scenario precisely:
- * a happy-path transfer, and every failure the service must guard against
- * (same account, missing account on either side, and insufficient funds).
- * {@code @BeforeEach setUp} creates two fresh accounts before every test so
- * cases never leak state into one another.
  */
 @ExtendWith(MockitoExtension.class)
 class TransferServiceTest {
@@ -44,7 +37,6 @@ class TransferServiceTest {
     @Mock
     private TransactionRepository transactionRepository;
 
-    @InjectMocks
     private TransferService transferService;
 
     private UUID fromAccountId;
@@ -54,6 +46,9 @@ class TransferServiceTest {
 
     @BeforeEach
     void setUp() {
+        // null redis client => local in-memory locking path
+        transferService = new TransferService(accountRepository, transactionRepository, null);
+
         fromAccountId = UUID.randomUUID();
         toAccountId = UUID.randomUUID();
         fromAccount = new Account(fromAccountId, "Alice", new BigDecimal("100.00"), Instant.now());

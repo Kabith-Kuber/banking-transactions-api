@@ -9,9 +9,11 @@ import com.brainridge.banking.model.Transaction;
 import com.brainridge.banking.model.TransactionType;
 import com.brainridge.banking.repository.AccountRepository;
 import com.brainridge.banking.repository.TransactionRepository;
+import com.brainridge.banking.store.UpstashRedisClient;
 import com.brainridge.banking.util.MoneyUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -34,31 +36,26 @@ public class TransferService {
 
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
+    private final UpstashRedisClient redisClient;
 
     /**
-     * One lock object per account id. Two transfers touching the same account
-     * must take turns; this map hands out (and remembers) a dedicated lock for
-     * each account so we can synchronize on it.
+     * One lock object per account id (local / in-memory mode only).
+     * On Vercel, Redis locks are used instead so every instance cooperates.
      */
     private final ConcurrentHashMap<UUID, Object> accountLocks = new ConcurrentHashMap<>();
 
-    public TransferService(AccountRepository accountRepository, TransactionRepository transactionRepository) {
+    @Autowired
+    public TransferService(
+            AccountRepository accountRepository,
+            TransactionRepository transactionRepository,
+            @Autowired(required = false) UpstashRedisClient redisClient) {
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
+        this.redisClient = redisClient;
     }
 
     /**
      * Moves {@code amount} from one account to another and records it.
-     *
-     * <p>Steps, in order:
-     * <ol>
-     *   <li>Reject a transfer to the same account (nonsensical).</li>
-     *   <li>Lock both accounts so no other transfer can interfere mid-way.</li>
-     *   <li>Confirm both accounts exist.</li>
-     *   <li>Confirm the sender has enough money.</li>
-     *   <li>Update both balances and save them.</li>
-     *   <li>Record the transaction and return a confirmation.</li>
-     * </ol>
      *
      * @throws InvalidTransferException   if source and destination are the same
      * @throws AccountNotFoundException   if either account doesn't exist
@@ -72,60 +69,61 @@ public class TransferService {
         }
 
         // Deadlock avoidance: always lock accounts in a consistent order (by id).
-        // If transfer A->B and transfer B->A ran at once and each grabbed one lock
-        // first, they could wait on each other forever. Sorting the two ids means
-        // every transfer acquires locks in the same order, so that can't happen.
         UUID firstLockId = fromAccountId.compareTo(toAccountId) < 0 ? fromAccountId : toAccountId;
         UUID secondLockId = fromAccountId.compareTo(toAccountId) < 0 ? toAccountId : fromAccountId;
 
+        if (redisClient != null) {
+            String lockKey = "banking:lock:" + firstLockId + ":" + secondLockId;
+            return redisClient.withLock(lockKey,
+                    () -> performTransfer(fromAccountId, toAccountId, normalizedAmount, description));
+        }
+
         synchronized (lockFor(firstLockId)) {
             synchronized (lockFor(secondLockId)) {
-                // Read both accounts inside the locks so their balances can't change
-                // out from under us while we work.
-                Account fromAccount = accountRepository.findById(fromAccountId)
-                        .orElseThrow(() -> new AccountNotFoundException(fromAccountId));
-                Account toAccount = accountRepository.findById(toAccountId)
-                        .orElseThrow(() -> new AccountNotFoundException(toAccountId));
-
-                // Business rule: you can't send more than you have.
-                if (fromAccount.getBalance().compareTo(normalizedAmount) < 0) {
-                    log.warn("Insufficient funds for transfer from={} balance={} amount={}",
-                            fromAccountId, fromAccount.getBalance(), normalizedAmount);
-                    throw new InsufficientFundsException(fromAccountId, fromAccount.getBalance(), normalizedAmount);
-                }
-
-                // Move the money: subtract from sender, add to receiver.
-                fromAccount.setBalance(MoneyUtils.normalize(fromAccount.getBalance().subtract(normalizedAmount)));
-                toAccount.setBalance(MoneyUtils.normalize(toAccount.getBalance().add(normalizedAmount)));
-
-                accountRepository.save(fromAccount);
-                accountRepository.save(toAccount);
-
-                // Record the movement so it shows up in both accounts' history.
-                Transaction transaction = new Transaction(
-                        UUID.randomUUID(),
-                        fromAccountId,
-                        toAccountId,
-                        normalizedAmount,
-                        description,
-                        Instant.now(),
-                        TransactionType.TRANSFER
-                );
-                transactionRepository.save(transaction);
-
-                log.info("Transfer completed transactionId={} from={} to={} amount={}",
-                        transaction.getId(), fromAccountId, toAccountId, normalizedAmount);
-
-                return TransferResponse.from(transaction);
+                return performTransfer(fromAccountId, toAccountId, normalizedAmount, description);
             }
         }
     }
 
-    /**
-     * Returns the shared lock object for an account, creating it on first use.
-     * {@code computeIfAbsent} guarantees every caller asking for the same id
-     * gets the exact same lock instance.
-     */
+    private TransferResponse performTransfer(
+            UUID fromAccountId,
+            UUID toAccountId,
+            BigDecimal normalizedAmount,
+            String description) {
+        Account fromAccount = accountRepository.findById(fromAccountId)
+                .orElseThrow(() -> new AccountNotFoundException(fromAccountId));
+        Account toAccount = accountRepository.findById(toAccountId)
+                .orElseThrow(() -> new AccountNotFoundException(toAccountId));
+
+        if (fromAccount.getBalance().compareTo(normalizedAmount) < 0) {
+            log.warn("Insufficient funds for transfer from={} balance={} amount={}",
+                    fromAccountId, fromAccount.getBalance(), normalizedAmount);
+            throw new InsufficientFundsException(fromAccountId, fromAccount.getBalance(), normalizedAmount);
+        }
+
+        fromAccount.setBalance(MoneyUtils.normalize(fromAccount.getBalance().subtract(normalizedAmount)));
+        toAccount.setBalance(MoneyUtils.normalize(toAccount.getBalance().add(normalizedAmount)));
+
+        accountRepository.save(fromAccount);
+        accountRepository.save(toAccount);
+
+        Transaction transaction = new Transaction(
+                UUID.randomUUID(),
+                fromAccountId,
+                toAccountId,
+                normalizedAmount,
+                description,
+                Instant.now(),
+                TransactionType.TRANSFER
+        );
+        transactionRepository.save(transaction);
+
+        log.info("Transfer completed transactionId={} from={} to={} amount={}",
+                transaction.getId(), fromAccountId, toAccountId, normalizedAmount);
+
+        return TransferResponse.from(transaction);
+    }
+
     private Object lockFor(UUID accountId) {
         return accountLocks.computeIfAbsent(accountId, id -> new Object());
     }
