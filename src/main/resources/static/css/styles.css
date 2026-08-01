@@ -616,15 +616,90 @@ table.data tbody tr:hover { background: var(--surface-2); }
 .badge--neutral { color: var(--text-2); background: var(--surface-2); border-color: var(--border); }
 
 /* ============================================================
-   Balance distribution
+   Dashboard charts
    ============================================================ */
-.dist { display: grid; gap: 14px; }
-.dist-row { display: grid; gap: 6px; }
-.dist-head { display: flex; justify-content: space-between; font-size: 13px; }
-.dist-head .name { font-weight: 550; }
-.dist-head .val { color: var(--text-2); font-variant-numeric: tabular-nums; }
-.dist-track { height: 8px; border-radius: var(--r-full); background: var(--surface-2); overflow: hidden; }
-.dist-fill { height: 100%; border-radius: var(--r-full); background: linear-gradient(90deg, var(--accent), var(--accent-bright)); transition: width 400ms var(--ease); }
+.dashboard-charts {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 18px;
+    margin-bottom: 18px;
+}
+.chart-layout {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 18px;
+    align-items: center;
+}
+.donut-wrap { width: 150px; }
+.donut-svg { width: 100%; height: auto; display: block; }
+.donut-track { fill: none; stroke: var(--surface-2); stroke-width: 16; }
+.donut-slice {
+    fill: none;
+    stroke-width: 16;
+    stroke-linecap: butt;
+    transition: stroke-dashoffset 400ms var(--ease);
+}
+.donut-hole { fill: var(--surface); }
+.donut-label {
+    fill: var(--text-3);
+    font-size: 9px;
+    font-family: "IBM Plex Mono", monospace;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+.donut-total {
+    fill: var(--text);
+    font-size: 11px;
+    font-weight: 700;
+    font-family: "Manrope", sans-serif;
+}
+.chart-legend { display: grid; gap: 9px; min-width: 0; }
+.chart-legend-row {
+    display: grid;
+    grid-template-columns: 10px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    font-size: 12.5px;
+}
+.chart-swatch { width: 10px; height: 10px; border-radius: 2px; }
+.chart-legend-name { font-weight: 560; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chart-legend-val { color: var(--text-2); font-size: 11.5px; }
+
+.volume-meta {
+    display: flex;
+    gap: 18px;
+    margin-bottom: 10px;
+}
+.volume-meta > div { display: grid; gap: 2px; }
+.volume-meta span {
+    color: var(--text-3);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+.volume-meta strong { font-size: 15px; }
+.volume-svg { width: 100%; height: auto; display: block; }
+.volume-axis { stroke: var(--border); stroke-width: 1; }
+.vol-bar rect {
+    fill: var(--accent);
+    opacity: .88;
+    transition: opacity var(--dur) var(--ease);
+}
+.vol-bar:hover rect { opacity: 1; }
+.vol-bar text {
+    fill: var(--text-3);
+    font-size: 8px;
+    font-family: "IBM Plex Mono", monospace;
+}
+
+@media (max-width: 980px) {
+    .dashboard-charts { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+    .chart-layout { grid-template-columns: 1fr; justify-items: center; }
+    .chart-legend { width: 100%; }
+}
 
 /* ============================================================
    Activity feed
@@ -712,36 +787,78 @@ table.data tbody tr:hover { background: var(--surface-2); }
 
 /* ============================================================
    Guided tour
+   Keep the card above the page. Do NOT raise highlighted
+   sections above this overlay — that hid the tour card.
    ============================================================ */
 .tour-overlay {
-    position: fixed; inset: 0; z-index: 90;
-    background: rgba(11, 27, 48, 0.5);
-    display: none; align-items: flex-end; justify-content: center;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
     padding: 24px;
+    background: rgba(23, 23, 20, 0.42);
+    backdrop-filter: blur(2px);
 }
 .tour-overlay.show { display: flex; animation: viewIn var(--dur) var(--ease); }
 .tour-box {
-    width: min(480px, 100%);
+    width: min(440px, 100%);
     background: var(--surface);
-    border-radius: var(--r-lg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
     box-shadow: var(--shadow-lg);
-    padding: 22px;
+    padding: 22px 22px 18px;
+    position: relative;
+    z-index: 201;
 }
-.tour-step { font-size: 11.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent-bright); }
-.tour-box h3 { font-size: 17px; font-weight: 680; margin: 6px 0; }
-.tour-box p { font-size: 13.5px; color: var(--text-2); margin-bottom: 18px; }
-.tour-actions { display: flex; justify-content: space-between; align-items: center; }
-.tour-dots { display: flex; gap: 6px; }
-.tour-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border-strong); }
-.tour-dot.active { background: var(--accent-bright); width: 18px; border-radius: 3px; }
+.tour-step {
+    display: inline-block;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+}
+.tour-box h3 {
+    font-size: 18px;
+    font-weight: 650;
+    letter-spacing: -.02em;
+    margin: 8px 0 6px;
+    color: var(--text);
+}
+.tour-box p {
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--text-2);
+    margin: 0 0 18px;
+}
+.tour-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.tour-buttons { display: flex; gap: 8px; }
+.tour-dots { display: flex; gap: 6px; flex-wrap: wrap; }
+.tour-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--border-strong);
+    transition: width var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.tour-dot.active { background: var(--accent); width: 18px; border-radius: 3px; }
 
+/* Outline only — no z-index, so it never covers the tour card. */
 .highlight {
-    position: relative; z-index: 91;
-    outline: 2px solid var(--accent-bright);
-    outline-offset: 4px;
-    border-radius: var(--r-md);
-    box-shadow: 0 0 0 6px rgba(29, 95, 191, 0.16);
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: var(--r);
+    box-shadow: 0 0 0 4px rgba(49, 87, 213, 0.18);
+    animation: tourPulse 1.4s ease-in-out infinite;
 }
+@keyframes tourPulse {
+    0%, 100% { box-shadow: 0 0 0 4px rgba(49, 87, 213, 0.14); }
+    50% { box-shadow: 0 0 0 7px rgba(49, 87, 213, 0.22); }
+}
+body.tour-open { overflow: hidden; }
 
 /* ============================================================
    Utilities & responsive
@@ -846,7 +963,7 @@ table.data tbody tr:hover { background: var(--surface-2); }
     display: grid;
     grid-template-columns: minmax(0, 1.55fr) minmax(280px, .8fr);
     gap: 18px;
-    margin-top: 20px;
+    margin-top: 0;
     align-items: start;
 }
 .dashboard-rail { display: grid; gap: 18px; }
@@ -1200,8 +1317,8 @@ table.data tbody td { font-size: 12.5px; }
 .badge { border-radius: 3px; padding: 2px 6px; font-family: "IBM Plex Mono", monospace; font-size: 9.5px; }
 .badge::before { width: 4px; height: 4px; }
 
-.dist-fill { background: var(--accent); border-radius: 1px; }
-.dist-track { border-radius: 1px; }
+.chart-card .card-body { min-height: 196px; }
+.donut-slice { stroke-linecap: butt; }
 .feed-item { padding: 12px 17px; }
 .feed-ico { border-radius: 3px; }
 .feed-msg { font-size: 12px; }

@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./css/styles.css?v=7">
+    <link rel="stylesheet" href="./css/styles.css?v=9">
 </head>
 <body>
     <div class="app">
@@ -113,6 +113,27 @@
                         </div>
                     </div>
 
+                    <div class="dashboard-charts" data-tour="charts">
+                        <div class="card chart-card">
+                            <div class="card-header">
+                                <div>
+                                    <div class="card-title">Balance share</div>
+                                    <div class="card-desc">How money is split across open accounts.</div>
+                                </div>
+                            </div>
+                            <div class="card-body" id="balanceChart"></div>
+                        </div>
+                        <div class="card chart-card">
+                            <div class="card-header">
+                                <div>
+                                    <div class="card-title">Transfer volume</div>
+                                    <div class="card-desc">Amounts moved during this browser session.</div>
+                                </div>
+                            </div>
+                            <div class="card-body" id="volumeChart"></div>
+                        </div>
+                    </div>
+
                     <div class="dashboard-workspace">
                         <div class="card account-focus-card">
                             <div class="card-header">
@@ -132,10 +153,6 @@
                                     <button class="quick-action" data-goto="transfer" type="button"><span>↗</span> Transfer money</button>
                                     <button class="quick-action" data-goto="history" type="button"><span>⌕</span> View transactions</button>
                                 </div>
-                            </div>
-                            <div class="card">
-                                <div class="card-header"><div class="card-title">Balance mix</div></div>
-                                <div class="card-body" id="distributionBody"></div>
                             </div>
                         </div>
                     </div>
@@ -321,14 +338,14 @@
     </div>
 
     <!-- ===================== Tour ===================== -->
-    <div class="tour-overlay" id="tourOverlay" role="dialog" aria-modal="true" aria-labelledby="tourTitle">
+    <div class="tour-overlay" id="tourOverlay" role="dialog" aria-modal="true" aria-labelledby="tourTitle" aria-hidden="true">
         <div class="tour-box">
-            <span class="tour-step" id="tourStep">Step 1 of 5</span>
+            <span class="tour-step" id="tourStep">Step 1 of 6</span>
             <h3 id="tourTitle">Welcome</h3>
-            <p id="tourText"></p>
+            <p id="tourText">A short walkthrough of the banking dashboard.</p>
             <div class="tour-actions">
                 <div class="tour-dots" id="tourDots"></div>
-                <div style="display:flex;gap:8px;">
+                <div class="tour-buttons">
                     <button class="btn btn--ghost btn--sm" id="tourSkip" type="button">Skip</button>
                     <button class="btn btn--primary btn--sm" id="tourNext" type="button">Next</button>
                 </div>
@@ -338,6 +355,6 @@
 
     <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="false"></div>
 
-    <script src="./js/app.js?v=7"></script>
+    <script src="./js/app.js?v=9"></script>
 </body>
 </html>

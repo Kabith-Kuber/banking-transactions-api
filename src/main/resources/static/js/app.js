@@ -11,6 +11,9 @@ const API = "/api/v1";
 const STORAGE_KEY = "brainridge_accounts";
 const ACTIVITY_KEY = "brainridge_activity";
 const STATS_KEY = "brainridge_stats";
+const TRANSFER_LOG_KEY = "brainridge_transfer_log";
+/* Soft palette for charts — keeps slices easy to tell apart. */
+const CHART_COLORS = ["#3157d5", "#171714", "#3d8b6e", "#c45c26", "#6b5b95", "#2a9d8f", "#b08968"];
 let selectedAccountId = null;
 
 const $ = (id) => document.getElementById(id);
@@ -56,11 +59,16 @@ const setAccounts = (a) => localStorage.setItem(STORAGE_KEY, JSON.stringify(a));
 
 const getStats = () => readJSON(STATS_KEY, { transfers: 0, volume: 0 });
 const setStats = (s) => localStorage.setItem(STATS_KEY, JSON.stringify(s));
+const getTransferLog = () => readJSON(TRANSFER_LOG_KEY, []);
 const bumpStats = (amount) => {
     const s = getStats();
     s.transfers += 1;
     s.volume += Number(amount) || 0;
     setStats(s);
+    // Keep a short list of recent transfers so the volume chart has real points.
+    const log = getTransferLog();
+    log.push({ amount: Number(amount) || 0, time: new Date().toISOString() });
+    localStorage.setItem(TRANSFER_LOG_KEY, JSON.stringify(log.slice(-12)));
 };
 
 const getActivity = () => readJSON(ACTIVITY_KEY, []);
@@ -197,24 +205,113 @@ function renderMetrics() {
     $("accountsCountBadge").textContent = `${accounts.length} total`;
 }
 
-/* ---------------- Rendering: balance distribution ---------------- */
-function renderDistribution() {
+/* ---------------- Charts (plain SVG — no chart library) ---------------- */
+function donutSlice(cx, cy, r, startAngle, endAngle) {
+    // Convert polar angles into an SVG arc path for one donut slice.
+    const toXY = (angle) => {
+        const rad = ((angle - 90) * Math.PI) / 180;
+        return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+    };
+    const start = toXY(endAngle);
+    const end = toXY(startAngle);
+    const large = endAngle - startAngle > 180 ? 1 : 0;
+    return `M ${start.x} ${start.y} A ${r} ${r} 0 ${large} 0 ${end.x} ${end.y}`;
+}
+
+function renderBalanceChart() {
     const accounts = getAccounts();
-    const body = $("distributionBody");
+    const body = $("balanceChart");
     if (accounts.length === 0) {
-        body.innerHTML = emptyBlock("bars", "No data yet", "Balances appear here once you open accounts.");
+        body.innerHTML = emptyBlock("bars", "No balances yet", "Open an account and its share will appear here.");
         return;
     }
-    const max = Math.max(...accounts.map((a) => Number(a.balance || 0)), 1);
-    const rows = accounts.slice(0, 6).map((a) => {
-        const pct = Math.max((Number(a.balance || 0) / max) * 100, 2);
+
+    const total = accounts.reduce((sum, a) => sum + Number(a.balance || 0), 0);
+    if (total <= 0) {
+        body.innerHTML = emptyBlock("bars", "Zero balances", "Fund an account to see the balance share chart.");
+        return;
+    }
+
+    // Build donut slices from each account's share of the total.
+    let angle = 0;
+    const slices = accounts.map((account, index) => {
+        const value = Number(account.balance || 0);
+        const sweep = (value / total) * 360;
+        const start = angle;
+        const end = angle + Math.max(sweep, 0.01);
+        angle = end;
+        const color = CHART_COLORS[index % CHART_COLORS.length];
+        const pct = ((value / total) * 100).toFixed(0);
+        // A full 360° arc is awkward in SVG, so one-slice charts use a circle.
+        const mark = sweep >= 359.9
+            ? `<circle cx="70" cy="70" r="52" fill="none" stroke="${color}" class="donut-slice"></circle>`
+            : `<path d="${donutSlice(70, 70, 52, start, end)}" stroke="${color}" class="donut-slice"></path>`;
+        return { account, color, pct, mark };
+    });
+
+    const legend = slices.map((slice) => `
+        <div class="chart-legend-row">
+            <span class="chart-swatch" style="background:${slice.color}"></span>
+            <span class="chart-legend-name">${esc(slice.account.ownerName)}</span>
+            <span class="chart-legend-val numeric">${money(slice.account.balance)} · ${slice.pct}%</span>
+        </div>`).join("");
+
+    body.innerHTML = `
+        <div class="chart-layout">
+            <div class="donut-wrap" aria-hidden="true">
+                <svg viewBox="0 0 140 140" class="donut-svg">
+                    <circle cx="70" cy="70" r="52" class="donut-track"></circle>
+                    ${slices.map((s) => s.mark).join("")}
+                    <circle cx="70" cy="70" r="34" class="donut-hole"></circle>
+                    <text x="70" y="66" text-anchor="middle" class="donut-label">Total</text>
+                    <text x="70" y="84" text-anchor="middle" class="donut-total">${esc(money(total))}</text>
+                </svg>
+            </div>
+            <div class="chart-legend">${legend}</div>
+        </div>`;
+}
+
+function renderVolumeChart() {
+    const body = $("volumeChart");
+    const log = getTransferLog();
+    if (log.length === 0) {
+        body.innerHTML = emptyBlock("bars", "No transfers yet", "Send money once and a volume bar will show up here.", "transfer", "Send money");
+        wireGotoButtons();
+        return;
+    }
+
+    const max = Math.max(...log.map((item) => item.amount), 1);
+    const width = 320;
+    const height = 140;
+    const pad = { top: 16, right: 8, bottom: 28, left: 8 };
+    const innerW = width - pad.left - pad.right;
+    const innerH = height - pad.top - pad.bottom;
+    const gap = 8;
+    const barW = Math.max(12, (innerW - gap * (log.length - 1)) / log.length);
+
+    const bars = log.map((item, index) => {
+        const h = Math.max(4, (item.amount / max) * innerH);
+        const x = pad.left + index * (barW + gap);
+        const y = pad.top + (innerH - h);
+        const label = new Date(item.time).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
         return `
-            <div class="dist-row">
-                <div class="dist-head"><span class="name">${esc(a.ownerName)}</span><span class="val numeric">${money(a.balance)}</span></div>
-                <div class="dist-track"><div class="dist-fill" style="width:${pct}%"></div></div>
-            </div>`;
+            <g class="vol-bar">
+                <rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="2"></rect>
+                <text x="${x + barW / 2}" y="${height - 8}" text-anchor="middle">${esc(label)}</text>
+                <title>${money(item.amount)} at ${esc(label)}</title>
+            </g>`;
     }).join("");
-    body.innerHTML = `<div class="dist">${rows}</div>`;
+
+    const latest = log[log.length - 1];
+    body.innerHTML = `
+        <div class="volume-meta">
+            <div><span>Last transfer</span><strong class="numeric">${money(latest.amount)}</strong></div>
+            <div><span>Shown</span><strong>${log.length} move${log.length === 1 ? "" : "s"}</strong></div>
+        </div>
+        <svg viewBox="0 0 ${width} ${height}" class="volume-svg" role="img" aria-label="Transfer volume chart">
+            <line x1="${pad.left}" y1="${pad.top + innerH}" x2="${width - pad.right}" y2="${pad.top + innerH}" class="volume-axis"></line>
+            ${bars}
+        </svg>`;
 }
 
 /* ---------------- Rendering: account tiles ---------------- */
@@ -455,7 +552,8 @@ function renderAll() {
         selectedAccountId = accounts[0].id;
     }
     renderMetrics();
-    renderDistribution();
+    renderBalanceChart();
+    renderVolumeChart();
     renderAccountsGrid();
     renderDashboardFocus();
     populateSelects();
@@ -681,7 +779,9 @@ function skeletonTable() {
 /* ---------------- Clear activity ---------------- */
 $("clearActivityBtn").addEventListener("click", () => {
     localStorage.removeItem(ACTIVITY_KEY);
+    localStorage.removeItem(TRANSFER_LOG_KEY);
     renderActivity();
+    renderVolumeChart();
 });
 $("accountSearch").addEventListener("input", renderAccountsGrid);
 $("historyFilter").addEventListener("change", () => {
@@ -719,21 +819,59 @@ $("runDemoBtn").addEventListener("click", async (e) => {
 
 /* ---------------- Guided tour ---------------- */
 const tourSteps = [
-    { view: "overview", title: "Welcome to BrainRidge Bank", text: "This is your online banking dashboard. It shows your total balance, your accounts, and recent activity. Here is a quick tour." },
-    { view: "accounts", title: "Your accounts", text: "Open new accounts on the left and see each one as a card on the right, with its balance and a masked account number. You need two accounts to make a transfer." },
-    { view: "transfer", title: "Send money", text: "Choose a sender and receiver, enter an amount, and send. The preview shows both parties, and balances update instantly everywhere." },
-    { view: "history", title: "Transactions", text: "Pick any account to see the transfers it sent or received. Money out shows in red, money in shows in green." },
-    { view: "overview", title: "You're all set", text: "Back on the dashboard you'll see live totals and activity. Try the Run demo button to watch it work end to end." }
+    {
+        view: "overview",
+        target: "hero",
+        title: "Welcome to BrainRidge Bank",
+        text: "This dashboard shows your total balance, account count, and how much money has moved. Use it as your home base."
+    },
+    {
+        view: "overview",
+        target: "charts",
+        title: "Live charts",
+        text: "Balance share shows how money is split across accounts. Transfer volume charts the amounts you send in this session."
+    },
+    {
+        view: "accounts",
+        target: "create",
+        title: "Open accounts",
+        text: "Create an account with a name and starting balance. You need at least two accounts before you can send money."
+    },
+    {
+        view: "transfer",
+        target: "transfer",
+        title: "Send money",
+        text: "Pick a sender and receiver, enter an amount, then send. The preview shows both balances before you confirm."
+    },
+    {
+        view: "history",
+        target: "history",
+        title: "Transaction history",
+        text: "Choose an account to load its transfers. Sent amounts show in red, received amounts show in green."
+    },
+    {
+        view: "overview",
+        target: "hero",
+        title: "You're all set",
+        text: "That’s the full flow: open accounts, transfer funds, and review history. Try Run demo to watch it end to end."
+    }
 ];
 let tourIdx = 0;
 
 function renderTourDots() {
-    $("tourDots").innerHTML = tourSteps.map((_, i) => `<span class="tour-dot ${i === tourIdx ? "active" : ""}"></span>`).join("");
+    $("tourDots").innerHTML = tourSteps.map((_, i) =>
+        `<span class="tour-dot ${i === tourIdx ? "active" : ""}" aria-hidden="true"></span>`
+    ).join("");
 }
-function clearHighlight() { $$(".highlight").forEach((el) => el.classList.remove("highlight")); }
+
+function clearHighlight() {
+    $$(".highlight").forEach((el) => el.classList.remove("highlight"));
+}
+
 function showTour(i) {
     tourIdx = i;
     const step = tourSteps[i];
+    closeSidebar();
     setView(step.view);
     $("tourStep").textContent = `Step ${i + 1} of ${tourSteps.length}`;
     $("tourTitle").textContent = step.title;
@@ -741,11 +879,27 @@ function showTour(i) {
     $("tourNext").textContent = i === tourSteps.length - 1 ? "Finish" : "Next";
     renderTourDots();
     clearHighlight();
-    const target = document.querySelector(`[data-tour="${step.view}"]`);
-    if (target) target.classList.add("highlight");
-    $("tourOverlay").classList.add("show");
+
+    // Highlight a small target area, not the whole page section.
+    const target = document.querySelector(`[data-tour="${step.target}"]`);
+    if (target) {
+        target.classList.add("highlight");
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    const overlay = $("tourOverlay");
+    overlay.classList.add("show");
+    overlay.setAttribute("aria-hidden", "false");
+    document.body.classList.add("tour-open");
 }
-function endTour() { $("tourOverlay").classList.remove("show"); clearHighlight(); }
+
+function endTour() {
+    const overlay = $("tourOverlay");
+    overlay.classList.remove("show");
+    overlay.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("tour-open");
+    clearHighlight();
+}
 
 $("startTourBtn").addEventListener("click", () => showTour(0));
 $("tourNext").addEventListener("click", () => (tourIdx >= tourSteps.length - 1 ? endTour() : showTour(tourIdx + 1)));
