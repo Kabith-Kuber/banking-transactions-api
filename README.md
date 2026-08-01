@@ -69,6 +69,9 @@ Controller → Service → Repository → Storage
 - **BigDecimal** money (2 decimals), **UUID** ids, ordered locking on transfers
 - DTOs + validation + JSON error responses
 
+> Live Redis DB is temporary unless claimed:  
+> [Claim / keep the Upstash database](https://upstash.com/start-redis/console/fe632a1b-e3f1-49f2-891c-7430d4400e1a)
+
 ---
 
 ## Assumptions
