@@ -1,0 +1,12 @@
+.git
+.idea
+.vscode
+target
+*.iml
+*.md
+plan.md
+run.bat
+.cursor
+agent-transcripts
+**/.DS_Store
+**/Thumbs.db

@@ -1,0 +1,23 @@
+# Build the Spring Boot app, then run it on Vercel Fluid compute.
+# Vercel routes HTTP traffic to $PORT (defaults to 80).
+
+FROM eclipse-temurin:17-jdk-alpine AS build
+WORKDIR /app
+
+COPY mvnw .
+COPY .mvn .mvn
+COPY pom.xml .
+COPY src src
+
+RUN chmod +x mvnw \
+    && ./mvnw -q -DskipTests package
+
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+
+COPY --from=build /app/target/*.jar app.jar
+
+ENV PORT=80
+EXPOSE 80
+
+CMD ["sh", "-c", "java -jar app.jar --server.port=${PORT}"]
